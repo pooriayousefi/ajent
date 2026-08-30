@@ -269,5 +269,3 @@ option) any later version, with the GNU Classpath Exception which is available
 at https://www.gnu.org/software/classpath/license.html.
 
 ***
-
-This is perfect. Paste it into your GitHub Release notes, attach your `ajent.jar`, and hit publish!
