@@ -1,0 +1,23 @@
+# Clojure
+target/
+classes/
+.cpcache/
+*.jar
+
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+env/
+
+# C/C++
+*.o
+*.so
+*.exe
+*.out
+bin/
+build/
+
+# macOS
+.DS_Store

@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>&#x1f9e0; aJent&colon; Agentic AI Framework</title>
+            <style>
+/* From extension vscode.github */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+.vscode-dark img[src$=\#gh-light-mode-only],
+.vscode-light img[src$=\#gh-dark-mode-only],
+.vscode-high-contrast:not(.vscode-high-contrast-light) img[src$=\#gh-light-mode-only],
+.vscode-high-contrast-light img[src$=\#gh-dark-mode-only] {
+	display: none;
+}
+
+</style>
+            
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/markdown.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/highlight.css">
+<style>
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe WPC', 'Segoe UI', system-ui, 'Ubuntu', 'Droid Sans', sans-serif;
+                font-size: 14px;
+                line-height: 1.6;
+            }
+        </style>
+        <style>
+.task-list-item {
+    list-style-type: none;
+}
+
+.task-list-item-checkbox {
+    margin-left: -20px;
+    vertical-align: middle;
+    pointer-events: none;
+}
+</style>
+<style>
+:root {
+  --color-note: #0969da;
+  --color-tip: #1a7f37;
+  --color-warning: #9a6700;
+  --color-severe: #bc4c00;
+  --color-caution: #d1242f;
+  --color-important: #8250df;
+}
+
+</style>
+<style>
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-note: #2f81f7;
+    --color-tip: #3fb950;
+    --color-warning: #d29922;
+    --color-severe: #db6d28;
+    --color-caution: #f85149;
+    --color-important: #a371f7;
+  }
+}
+
+</style>
+<style>
+.markdown-alert {
+  padding: 0.5rem 1rem;
+  margin-bottom: 16px;
+  color: inherit;
+  border-left: .25em solid #888;
+}
+
+.markdown-alert>:first-child {
+  margin-top: 0
+}
+
+.markdown-alert>:last-child {
+  margin-bottom: 0
+}
+
+.markdown-alert .markdown-alert-title {
+  display: flex;
+  font-weight: 500;
+  align-items: center;
+  line-height: 1
+}
+
+.markdown-alert .markdown-alert-title .octicon {
+  margin-right: 0.5rem;
+  display: inline-block;
+  overflow: visible !important;
+  vertical-align: text-bottom;
+  fill: currentColor;
+}
+
+.markdown-alert.markdown-alert-note {
+  border-left-color: var(--color-note);
+}
+
+.markdown-alert.markdown-alert-note .markdown-alert-title {
+  color: var(--color-note);
+}
+
+.markdown-alert.markdown-alert-important {
+  border-left-color: var(--color-important);
+}
+
+.markdown-alert.markdown-alert-important .markdown-alert-title {
+  color: var(--color-important);
+}
+
+.markdown-alert.markdown-alert-warning {
+  border-left-color: var(--color-warning);
+}
+
+.markdown-alert.markdown-alert-warning .markdown-alert-title {
+  color: var(--color-warning);
+}
+
+.markdown-alert.markdown-alert-tip {
+  border-left-color: var(--color-tip);
+}
+
+.markdown-alert.markdown-alert-tip .markdown-alert-title {
+  color: var(--color-tip);
+}
+
+.markdown-alert.markdown-alert-caution {
+  border-left-color: var(--color-caution);
+}
+
+.markdown-alert.markdown-alert-caution .markdown-alert-title {
+  color: var(--color-caution);
+}
+
+</style>
+        
+        </head>
+        <body class="vscode-body vscode-light">
+            <span id="markdown-mermaid" aria-hidden="true" data-config="{&quot;darkModeTheme&quot;:&quot;vscode&quot;,&quot;lightModeTheme&quot;:&quot;vscode&quot;,&quot;maxTextSize&quot;:50000,&quot;clickDrag&quot;:&quot;alt&quot;,&quot;showControls&quot;:&quot;onHoverOrFocus&quot;,&quot;resizable&quot;:true,&quot;maxHeight&quot;:&quot;&quot;}"></span>
+				<h1 id="-ajent-agentic-ai-framework">🧠 aJent: Agentic AI Framework</h1>
+<h2 id="1-overview">1. Overview</h2>
+<p><strong>aJent</strong> is a dynamic, highly capable AI framework written in Clojure. It utilizes a <strong>Unified Concurrent Orchestrator</strong> architecture, where a single LLM instance acts as the central brain, dynamically discovering and utilizing a fleet of decoupled RESTful microservices (Tool Servers) to accomplish complex user tasks.</p>
+<p>Built natively around the OpenAI-compatible API standard, aJent executes robust ReAct (Reason + Act) loops to solve complex problems, running tool calls in parallel across a polyglot microservice fleet (C++, Clojure, Python) while strictly managing its own context window to ensure stable, long-running sessions.</p>
+<hr>
+<h2 id="2-architectural-philosophy">2. Architectural Philosophy</h2>
+<p>The AI engineering community is currently divided between &quot;Multi-Agent&quot; systems (e.g., AutoGen, CrewAI) where multiple LLM personas talk to each other, and &quot;Single-Agent&quot; systems where one LLM orchestrates a fleet of tools.</p>
+<p><strong>aJent intentionally champions the Single-Agent Concurrent Orchestrator model.</strong> This is the industry gold standard, used by OpenAI's Assistants API and LangChain's <code>AgentExecutor</code>, because it solves the core problems of multi-agent systems:</p>
+<ol>
+<li><strong>Solving the &quot;Telephone Game&quot;:</strong> In multi-agent systems, passing context between agents duplicates token costs and degrades performance. In aJent, the single brain holds the context, calls the tools, and synthesizes the result. Zero duplication.</li>
+<li><strong>True Concurrency:</strong> The Orchestrator LLM outputs multiple <code>tool_calls</code> in a single response, and aJent's Clojure backend executes the HTTP requests to different microservices in parallel. You get the performance of multi-agent systems without the complexity of inter-agent communication.</li>
+<li><strong>Stateless Microservices:</strong> By making the tool servers &quot;dumb executors&quot; that simply take arguments and return JSON, aJent achieves enterprise-grade decoupling. The tools don't know about the LLM, and the LLM doesn't know if a tool is written in C++, Python, or Clojure.</li>
+</ol>
+<hr>
+<h2 id="3-pros--cons-of-the-ajent-architecture">3. Pros &amp; Cons of the aJent Architecture</h2>
+<h3 id="strengths">Strengths</h3>
+<ul>
+<li><strong>Extreme Stability:</strong> By utilizing a structured, non-streaming ReAct loop, the framework ensures that tool calls are processed as complete, validated JSON payloads, eliminating fragility around partial JSON parsing.</li>
+<li><strong>Context Window Management:</strong> aJent actively protects its own memory. It employs a sliding window to age out old conversation history safely, and automatically caps massive tool outputs (like recursive directory listings) to prevent context overflow crashes.</li>
+<li><strong>Idiomatic Concurrency:</strong> Built natively on Clojure's parallel processing capabilities, the framework can execute multiple tool calls simultaneously across your thread pool without requiring complex asynchronous state machines.</li>
+<li><strong>Dynamic Agentic Workspaces:</strong> The framework dynamically detects the user's home directory and injects a workspace path (<code>~/aJentWorkbench</code>) into the LLM's system prompt at runtime. Tool servers contain zero hardcoded paths, ensuring cross-platform file safety.</li>
+<li><strong>Language Agnostic Tooling:</strong> Any microservice that adheres to the simple HTTP/JSON contract can be used as a tool server, allowing developers to write tools in whatever language best suits the task.</li>
+<li><strong>Advanced Error Recovery:</strong> The Orchestrator is instructed to analyze tool error messages, adjust its arguments, and retry failing operations rather than halting execution.</li>
+</ul>
+<h3 id="weaknesses">Weaknesses</h3>
+<ul>
+<li><strong>Context Window Limits:</strong> Like all single-agent architectures, if an agent must read a massive file (e.g., a 500-page book) and summarize it, it will eventually run out of physical memory. (This requires external Map-Reduce chunking or RAG strategies not natively built into the orchestrator).</li>
+<li><strong>Strict JSON Reliance:</strong> The framework's success is highly dependent on the underlying LLM's ability to adhere to strict JSON tool-call schemas. Less capable models will struggle to generate valid tool calls.</li>
+<li><strong>Synchronous UX:</strong> Because the framework waits for the full LLM response to ensure structural JSON integrity before executing tools, the user does not experience a live &quot;typewriter&quot; streaming effect during the reasoning phase.</li>
+<li><strong>Not a Multi-Agent System:</strong> aJent lacks inter-agent debate or persona conflict resolution. It executes tasks sequentially as a single, unified brain rather than crowdsourcing decisions among simulated personas.</li>
+</ul>
+<hr>
+<h2 id="4-the-tool-server-api-contract">4. The Tool Server API Contract</h2>
+<p>aJent is language-agnostic. Any microservice that adheres to the following HTTP/JSON contract can be used as an aJent Tool Server.</p>
+<h3 id="endpoint-1-schema-discovery-mandatory">Endpoint 1: Schema Discovery (Mandatory)</h3>
+<ul>
+<li><strong>Method:</strong> <code>GET /schema</code></li>
+<li><strong>Response:</strong> A JSON array of OpenAI-compatible tool schemas.</li>
+</ul>
+<pre><code class="language-json"><span class="hljs-punctuation">[</span>
+  <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;function&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;function&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+      <span class="hljs-attr">&quot;name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;tool_name&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;description&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;When to use this tool...&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;parameters&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+        <span class="hljs-attr">&quot;type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;object&quot;</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">&quot;properties&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;arg1&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;string&quot;</span> <span class="hljs-punctuation">}</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">&quot;required&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-string">&quot;arg1&quot;</span><span class="hljs-punctuation">]</span>
+      <span class="hljs-punctuation">}</span>
+    <span class="hljs-punctuation">}</span>
+  <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">]</span>
+</code></pre>
+<h3 id="endpoint-2-tool-execution-mandatory">Endpoint 2: Tool Execution (Mandatory)</h3>
+<ul>
+<li><strong>Method:</strong> <code>POST /tools/call</code></li>
+<li><strong>Request Body:</strong></li>
+</ul>
+<pre><code class="language-json"><span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;tool_name&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;arguments&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;arg1&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;value&quot;</span> <span class="hljs-punctuation">}</span> <span class="hljs-punctuation">}</span>
+</code></pre>
+<ul>
+<li><strong>Response Body (Success):</strong></li>
+</ul>
+<pre><code class="language-json"><span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;result&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Success data or string&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;is_error&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-keyword">false</span> <span class="hljs-punctuation">}</span>
+</code></pre>
+<ul>
+<li><strong>Response Body (Error):</strong></li>
+</ul>
+<pre><code class="language-json"><span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;error&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Description of the failure&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;is_error&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-keyword">true</span> <span class="hljs-punctuation">}</span>
+</code></pre>
+<p><em>(Note: Logical errors should return HTTP 200 with the error payload so the LLM can read the error string and recover. Do not return HTTP 500 for expected logic failures).</em></p>
+<hr>
+<h2 id="5-the-tool-server-fleet">5. The Tool Server Fleet</h2>
+<p>aJent currently operates with 7 specialized microservices across 3 programming languages (C++, Clojure, Python), exposing <strong>24 unique tools</strong>.</p>
+<h3 id="1-dirserver-c---port-4001">1. DirServer (C++ - Port 4001)</h3>
+<ul>
+<li><code>create_directory</code>: Creates a directory at an absolute path.</li>
+<li><code>list_directory</code>: Lists immediate files/folders (non-recursive).</li>
+<li><code>iterate_directories_recursively</code>: Returns a flat list of all files.</li>
+<li><code>delete_directory</code>: Recursively deletes a directory.</li>
+<li><code>get_last_modified_file</code>: Finds the most recently modified file in a directory.</li>
+</ul>
+<h3 id="2-fileserver-c---port-4002">2. FileServer (C++ - Port 4002)</h3>
+<ul>
+<li><code>write_text_file</code>: Writes text to an absolute path.</li>
+<li><code>read_text_file</code>: Reads text from a file.</li>
+<li><code>append_text_file</code>: Appends text to an existing file.</li>
+<li><code>delete_file</code>: Deletes a regular file.</li>
+<li><code>file_exists</code>: Checks if a path exists.</li>
+<li><code>get_file_info</code>: Returns metadata (size, is_directory, is_regular_file).</li>
+</ul>
+<h3 id="3-mathserver-c---port-4003">3. MathServer (C++ - Port 4003)</h3>
+<ul>
+<li><code>generate_random_number</code>: Generates random numbers (uniform, normal, bernoulli).</li>
+<li><code>calculate_statistics</code>: Calculates mean, median, variance, standard deviation.</li>
+<li><code>arithmetic_operation</code>: Performs add, subtract, multiply, divide, modulo, power.</li>
+</ul>
+<h3 id="4-shellserver-c---port-4004">4. ShellServer (C++ - Port 4004)</h3>
+<ul>
+<li><code>run_command</code>: Executes a shell command and returns combined stdout/stderr.</li>
+<li><strong>Security:</strong> Disabled by default. Requires <code>AJENT_SHELL_ENABLED=1</code>.</li>
+</ul>
+<h3 id="5-timeserver-clojure---port-4005">5. TimeServer (Clojure - Port 4005)</h3>
+<ul>
+<li><code>get_current_utc_date_time</code>: Returns current UTC time in ISO 8601 format.</li>
+<li><code>get_current_local_date_time</code>: Returns current local system time in ISO 8601 format.</li>
+</ul>
+<h3 id="6-utilserver-c---port-4006">6. UtilServer (C++ - Port 4006)</h3>
+<ul>
+<li><code>tokenize_string</code>: Splits a string by specified delimiters.</li>
+<li><code>count_words</code>: Counts exact words in a string.</li>
+<li><code>extract_json_from_text</code>: Extracts the first valid JSON object/array from messy text.</li>
+<li><code>generate_uuid</code>: Generates a random UUID v4 string.</li>
+</ul>
+<h3 id="7-pdfserver-python---port-4007">7. PDFServer (Python - Port 4007)</h3>
+<ul>
+<li><code>create_pdf</code>: Creates a new PDF with provided text at an absolute path.</li>
+<li><code>read_pdf</code>: Extracts all text content from a PDF.</li>
+<li><code>append_text_to_pdf</code>: Appends a new page with text to an existing PDF.</li>
+</ul>
+<hr>
+<h2 id="6-framework-configuration">6. Framework Configuration</h2>
+<h3 id="registrytxt"><code>registry.txt</code></h3>
+<p>Located in the aJent root directory. Contains a list of URLs for active tool servers, one per line.</p>
+<pre><code class="language-text">http://localhost:4001
+http://localhost:4002
+http://localhost:4003
+http://localhost:4004
+http://localhost:4005
+http://localhost:4006
+http://localhost:4007
+</code></pre>
+<h3 id="workspace-injection-ajentworkbench">Workspace Injection (<code>aJentWorkbench</code>)</h3>
+<p>The entry point dynamically detects the user's Home directory and appends <code>/aJentWorkbench</code>. It ensures this folder exists and injects the absolute path into the Orchestrator's system prompt, instructing the LLM to use absolute paths for all file operations.</p>
+<hr>
+<h2 id="7-execution--usage">7. Execution &amp; Usage</h2>
+<h3 id="step-1-start-the-tool-server-fleet">Step 1: Start the Tool Server Fleet</h3>
+<p>Ensure your C++ binaries are compiled and your Python virtual environment is set up. Start each tool server in a separate terminal window (or in the background). For example:</p>
+<pre><code class="language-bash">./http_tool_servers/dirserver/bin/dirserver
+./http_tool_servers/fileserver/bin/fileserver
+<span class="hljs-comment"># ... (start the rest)</span>
+</code></pre>
+<h3 id="step-2-start-the-llm-provider">Step 2: Start the LLM Provider</h3>
+<p>aJent requires an OpenAI-compatible API. For local execution, <code>llama.cpp</code> is highly recommended.</p>
+<p><strong>Recommended Context Setup:</strong>
+To prevent context overflow errors during complex tasks, allocate a large context window (<code>-c 16384</code>) and restrict the server to a single parallel slot (<code>-np 1</code>) so the agent gets the full context capacity.</p>
+<p><strong>Recommended Models:</strong> <code>Qwen2.5-32B-Instruct</code> or <code>Qwen2.5-14B-Instruct</code> (Excellent tool-calling adherence).</p>
+<pre><code class="language-bash">llama-server --jinja -m ~/llms/Qwen2.5-32B-Instruct-Q4_K_M.gguf \
+  --n-gpu-layers 999 --parallel 1 --cont-batching \
+  --ctx-size 16384 --batch-size 1024 --flash-attn on \
+  --host 127.0.0.1 --port 8080
+</code></pre>
+<h3 id="step-3-build-and-run-ajent">Step 3: Build and Run aJent</h3>
+<p>Build the uberjar:</p>
+<pre><code class="language-bash">lein uberjar
+</code></pre>
+<p>Run the framework:</p>
+<pre><code class="language-bash">java -jar target/ajent.jar http://localhost:8080 &lt;model-name&gt; &lt;temperature&gt;
+<span class="hljs-comment"># Example:</span>
+java -jar target/ajent.jar http://localhost:8080 Qwen2.5-32B-Instruct 0.7
+</code></pre>
+<p>You will be greeted with <code>aJent&gt;</code>. Type your prompts and press Enter. Type <code>exit</code> or <code>quit</code> to stop.</p>
+<hr>
+<h2 id="8-advanced-orchestrator-capabilities">8. Advanced Orchestrator Capabilities</h2>
+<p>The Orchestrator's system prompt enforces advanced Agentic behaviors:</p>
+<ol>
+<li><strong>Concurrent Execution:</strong> If the user requests multiple independent tasks, the LLM emits multiple tool calls in one response. The framework executes them concurrently in parallel.</li>
+<li><strong>Error Recovery:</strong> If a tool returns an error, the LLM is instructed NOT to report failure immediately, but to analyze the error, adjust its arguments, and try again.</li>
+<li><strong>Large Content Chunking:</strong> The system prompt explicitly directs the LLM to avoid generating massive text strings in a single tool call, instead using file appending tools to build large documents incrementally.</li>
+<li><strong>Contextual Resolution:</strong> The Orchestrator holds the full conversation history. If the user says &quot;read that file&quot;, the LLM resolves &quot;that file&quot; from the context window before calling a tool.</li>
+</ol>
+<hr>
+<h2 id="acknowledgements">Acknowledgements</h2>
+<p>I would like to express my gratitude to my AI assistant and mentor, <strong>GLM-5.2</strong>, for their exceptional consultancy and collaborative support throughout the development of this project. Your guidance was invaluable in bringing this framework to life.</p>
+<h2 id="license">License</h2>
+<p>Copyright © 2026 Pooria Yousefi</p>
+<p>This program and the accompanying materials are made available under the
+terms of the Eclipse Public License 2.0 which is available at
+<a href="https://www.eclipse.org/legal/epl-2.0/">https://www.eclipse.org/legal/epl-2.0/</a>.</p>
+<p>This Source Code may also be made available under the following Secondary
+Licenses when the conditions for such availability set forth in the Eclipse
+Public License, v. 2.0 are satisfied: GNU General Public License as published by
+the Free Software Foundation, either version 2 of the License, or (at your
+option) any later version, with the GNU Classpath Exception which is available
+at <a href="https://www.gnu.org/software/classpath/license.html">https://www.gnu.org/software/classpath/license.html</a>.</p>
+
+            
+            
+        </body>
+        </html>
