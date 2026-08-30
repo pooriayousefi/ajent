@@ -213,6 +213,14 @@ You will be greeted with `aJent>`. Type your prompts and press Enter. Type `exit
 
 ---
 
+Yes, it looks excellent! It is professional, clear, and gives the user exactly the information they need to get started. 
+
+I only have one minor formatting suggestion: to make it render beautifully on GitHub, you should use Markdown bullet points and code blocks for the Release Notes section. 
+
+Here is the slightly polished version with perfect Markdown formatting:
+
+***
+
 ## 8. Advanced Orchestrator Capabilities
 
 The Orchestrator's system prompt enforces advanced Agentic behaviors:
@@ -221,6 +229,31 @@ The Orchestrator's system prompt enforces advanced Agentic behaviors:
 2. **Error Recovery:** If a tool returns an error, the LLM is instructed NOT to report failure immediately, but to analyze the error, adjust its arguments, and try again.
 3. **Large Content Chunking:** The system prompt explicitly directs the LLM to avoid generating massive text strings in a single tool call, instead using file appending tools to build large documents incrementally.
 4. **Contextual Resolution:** The Orchestrator holds the full conversation history. If the user says "read that file", the LLM resolves "that file" from the context window before calling a tool.
+
+---
+
+## 9. Release Notes
+
+**aJent v1.0.0**
+Initial public release of the aJent Unified Concurrent Orchestrator.
+
+**Features:**
+* Non-streaming ReAct loop for stable tool-call parsing.
+* Concurrent parallel tool execution via `pmap`.
+* Sliding context window and output truncation to prevent LLM crashes.
+* Polyglot HTTP tool server support (C++, Python, Clojure).
+
+**Prerequisites for running the JAR:**
+* **Java 21+** installed (Clojure 1.12 requires a modern Java).
+* The **HTTP Tool Servers** running (they can't just run the JAR in a vacuum).
+* A local **LLM server** (like `llama-server`) running.
+
+After everything is set up successfully, run the sample command below in your terminal to start chatting:
+
+```bash
+java -jar ajent.jar http://localhost:8080 gpt-oss-20b 0.7
+```
+*(Note: Replace `gpt-oss-20b` with whatever model you have loaded in your local LLM server, such as `Qwen2.5-32B-Instruct`)*
 
 ---
 
@@ -242,3 +275,7 @@ Public License, v. 2.0 are satisfied: GNU General Public License as published by
 the Free Software Foundation, either version 2 of the License, or (at your
 option) any later version, with the GNU Classpath Exception which is available
 at https://www.gnu.org/software/classpath/license.html.
+
+***
+
+This is perfect. Paste it into your GitHub Release notes, attach your `ajent.jar`, and hit publish!
