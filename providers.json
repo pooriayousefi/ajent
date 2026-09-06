@@ -1,0 +1,19 @@
+{
+  "local": {
+    "default-model": "qwen3:14b",
+    "max-tokens": 16384,
+    "max-iterations": 15,
+    "history-window": 20
+  },
+  "zhipu": {
+    "default-model": "glm-4.5",
+    "max-tokens": 8192
+  },
+  "my-company-gateway": {
+    "description": "Internal OpenAI-compatible gateway",
+    "base-url": "https://gateway.internal:8443/v1",
+    "api-key-env": "GATEWAY_API_KEY",
+    "default-model": "gpt-4o-mini",
+    "max-iterations": 30
+  }
+}

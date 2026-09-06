@@ -1,5 +1,0 @@
-{:paths ["src"]
- :deps {org.clojure/clojure {:mvn/version "1.12.0"}
-        org.clojure/data.json {:mvn/version "2.5.0"}
-        aleph/aleph {:mvn/version "0.9.10"}}
- :aliases {:run {:main-opts ["-m" "time-server.main"]}}}

@@ -1,0 +1,48 @@
+{
+  "rest_servers": [
+    {
+      "name": "math",
+      "url": "http://localhost:4001",
+      "enabled": true,
+      "timeout_ms": 5000,
+      "description": "Arithmetic, statistics and random-number tools"
+    },
+    {
+      "name": "directory",
+      "url": "http://localhost:4002",
+      "enabled": true,
+      "timeout_ms": 5000,
+      "description": "Directory listing, creation and recursive traversal"
+    },
+    {
+      "name": "file",
+      "url": "http://localhost:4003",
+      "enabled": true,
+      "timeout_ms": 10000,
+      "description": "Text file read/write/append/delete plus path info"
+    },
+    {
+      "name": "shell",
+      "url": "http://localhost:4004",
+      "enabled": true,
+      "timeout_ms": 30000,
+      "description": "Sandboxed shell command execution"
+    },
+    {
+      "name": "utility",
+      "url": "http://localhost:4005",
+      "enabled": true,
+      "timeout_ms": 5000,
+      "description": "String tokenization, word counts, JSON extraction, UUID generation"
+    }
+  ],
+  "mcp_servers": [
+    {
+      "name": "mcp-filesystem",
+      "transport": "stdio",
+      "command": ["npx", "-y", "@modelcontextprotocol/server-filesystem", "/tmp"],
+      "enabled": true,
+      "description": "Official Anthropic MCP Filesystem Server"
+    }
+  ]
+}
