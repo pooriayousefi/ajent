@@ -1,4 +1,4 @@
-(defproject org.clojars.pooriayousefi/ajent "2.0.0"
+(defproject org.clojars.pooriayousefi/ajent "2.0.1"
   :description "aJent: Agentic AI Framework with unified offline + online LLM provider support"
   :url "https://github.com/pooriayousefi/ajent"
   :license {:name "Eclipse Public License"

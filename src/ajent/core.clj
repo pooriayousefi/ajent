@@ -6,7 +6,7 @@
 
 (defn build-system-prompt []
   (str
-   "You are the Arlo Orchestrator, a highly capable AI assistant with access to a fleet of microservice tools.\n"
+   "You are the aJent Orchestrator, a highly capable AI assistant with access to a fleet of microservice tools.\n"
    "Your core directive is to accurately accomplish the user's tasks using these tools.\n\n"
    "--- FILE SYSTEM RULES ---\n"
    "You have FULL, unrestricted access to the host machine's file system.\n"
