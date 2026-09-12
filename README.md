@@ -1,5 +1,5 @@
 # 🧠 aJent: Agentic AI Framework
-![Clojars Project](https://img.shields.io/clojars/v/org.clojars.pooriayousefi/ajent.svg)
+[![Clojars Project](https://img.shields.io/clojars/v/org.clojars.pooriayousefi/ajent.svg)](https://clojars.org/org.clojars.pooriayousefi/ajent)
 
 ## 1. Overview
 
