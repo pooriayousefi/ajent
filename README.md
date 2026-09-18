@@ -1,3 +1,5 @@
+<img width="1672" height="941" alt="7c38f039-e2a7-4230-8b90-126e9fa95cf4" src="https://github.com/user-attachments/assets/49468897-7d8b-43c1-9398-9dbf2dd9164d" />
+
 
 # 🧠 aJent: Agentic AI Framework
 [![Clojars Project](https://img.shields.io/clojars/v/org.clojars.pooriayousefi/ajent.svg)](https://clojars.org/org.clojars.pooriayousefi/ajent)
