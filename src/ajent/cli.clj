@@ -3,7 +3,7 @@
   (:require [ajent.providers :as providers]
             [clojure.string  :as str]))
 
-(def ^:const version "2.0.0")
+(def ^:const version "2.1.0")
 
 (def ^:private help-flags    #{"help" "--help" "-h"})
 (def ^:private version-flags #{"-v" "--version"})
@@ -19,7 +19,7 @@
   (println
    (str
     "\n"
-    "  ──────────────────────────────────────────────────────────\n" 
+    "  ──────────────────────────────────────────────────────────\n"
     "   aJent v" version "  ·  Agentic AI Framework\n"
     "   offline & online LLM providers  ·  concurrent tool fleet\n"
     "  ──────────────────────────────────────────────────────────\n")))

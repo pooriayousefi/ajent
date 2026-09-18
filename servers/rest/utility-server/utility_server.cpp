@@ -41,31 +41,16 @@ namespace pooriayousefi
 
         std::stringstream ss;
         ss << std::hex;
-        for (int i = 0; i < 8; i++)
-        {
-            ss << dis(gen);
-        }
+        for (int i = 0; i < 8; i++) ss << dis(gen);
         ss << "-";
-        for (int i = 0; i < 4; i++)
-        {
-            ss << dis(gen);
-        }
+        for (int i = 0; i < 4; i++) ss << dis(gen);
         ss << "-4";
-        for (int i = 0; i < 3; i++)
-        {
-            ss << dis(gen);
-        }
+        for (int i = 0; i < 3; i++) ss << dis(gen);
         ss << "-";
         ss << dis2(gen);
-        for (int i = 0; i < 3; i++)
-        {
-            ss << dis(gen);
-        }
+        for (int i = 0; i < 3; i++) ss << dis(gen);
         ss << "-";
-        for (int i = 0; i < 12; i++)
-        {
-            ss << dis(gen);
-        }
+        for (int i = 0; i < 12; i++) ss << dis(gen);
 
         return ss.str();
     }
@@ -85,18 +70,9 @@ namespace pooriayousefi
 
             if (in_string)
             {
-                if (escaped)
-                {
-                    escaped = false;
-                }
-                else if (c == '\\')
-                {
-                    escaped = true;
-                }
-                else if (c == '"')
-                {
-                    in_string = false;
-                }
+                if (escaped) escaped = false;
+                else if (c == '\\') escaped = true;
+                else if (c == '"') in_string = false;
                 continue;
             }
 
@@ -105,19 +81,10 @@ namespace pooriayousefi
                 in_string = true;
                 continue;
             }
-            if (c == open_char)
-            {
-                balance++;
-            }
-            else if (c == close_char)
-            {
-                balance--;
-            }
+            if (c == open_char) balance++;
+            else if (c == close_char) balance--;
 
-            if (balance == 0)
-            {
-                return i;
-            }
+            if (balance == 0) return i;
         }
         return std::string::npos;
     }
@@ -214,7 +181,7 @@ namespace pooriayousefi
             {
                 if (tool_name == "tokenize_string")
                 {
-                    std::string sentence, delimiters, err_json_unused;
+                    std::string sentence, delimiters;
                     JSON arg_error;
                     if (!get_required_string(args, "sentence", sentence, arg_error))
                     {
@@ -284,6 +251,7 @@ namespace pooriayousefi
                                 if (!parsed_json.is_discarded())
                                 {
                                     result = { {"result", parsed_json}, {"is_error", false} };
+                                    break; // BUGFIX: Added missing break statement to prevent overwriting successful result
                                 }
                             }
 
@@ -334,10 +302,7 @@ int main(int argc, char* argv[])
                 std::string message = "Internal server error";
                 try
                 {
-                    if (ep)
-                    {
-                        std::rethrow_exception(ep);
-                    }
+                    if (ep) std::rethrow_exception(ep);
                 }
                 catch (const std::exception& e)
                 {

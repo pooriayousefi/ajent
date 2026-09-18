@@ -79,26 +79,14 @@ namespace pooriayousefi
         std::optional<double> result{ std::nullopt };
         if (!args.contains(key))
         {
-            if (was_present)
-            {
-                *was_present = false;
-            }
+            if (was_present) *was_present = false;
             result = fallback;
         }
         else
         {
-            if (was_present)
-            {
-                *was_present = true;
-            }
-            if (!args[key].is_number())
-            {
-                result = std::nullopt;
-            }
-            else
-            {
-                result = args[key].get<double>();
-            }
+            if (was_present) *was_present = true;
+            if (!args[key].is_number()) result = std::nullopt;
+            else result = args[key].get<double>();
         }
         return result;
     }
@@ -128,10 +116,7 @@ namespace pooriayousefi
                         else
                         {
                             count = args["count"].get<int>();
-                            if (count < 1)
-                            {
-                                count = 1;
-                            }
+                            if (count < 1) count = 1;
                             if (count > MAX_RANDOM_COUNT)
                             {
                                 result = { {"error", "'count' exceeds the maximum of " + std::to_string(MAX_RANDOM_COUNT) + "."}, {"is_error", true} };
@@ -140,8 +125,10 @@ namespace pooriayousefi
                             {
                                 thread_local std::mt19937_64 gen{ std::random_device{}() };
                                 JSON numbers = JSON::array();
+                                
                                 auto a_opt = get_number(args, "a", 0.0);
                                 auto b_opt = get_number(args, "b", (dist == "normal") ? 1.0 : 100.0);
+                                
                                 if (!a_opt || !b_opt)
                                 {
                                     result = { {"error", "'a' and 'b' must be numbers."}, {"is_error", true} };
@@ -152,29 +139,17 @@ namespace pooriayousefi
                                     {
                                         long long a = static_cast<long long>(*a_opt);
                                         long long b = static_cast<long long>(*b_opt);
-                                        if (a > b)
-                                        {
-                                            std::swap(a, b);
-                                        }
+                                        if (a > b) std::swap(a, b);
                                         std::uniform_int_distribution<long long> dis(a, b);
-                                        for (int i = 0; i < count; ++i)
-                                        {
-                                            numbers.push_back(dis(gen));
-                                        }
+                                        for (int i = 0; i < count; ++i) numbers.push_back(dis(gen));
                                     }
                                     else if (dist == "uniform_real")
                                     {
                                         double a = *a_opt;
                                         double b = *b_opt;
-                                        if (a > b)
-                                        {
-                                            std::swap(a, b);
-                                        }
+                                        if (a > b) std::swap(a, b);
                                         std::uniform_real_distribution<double> dis(a, b);
-                                        for (int i = 0; i < count; ++i)
-                                        {
-                                            numbers.push_back(dis(gen));
-                                        }
+                                        for (int i = 0; i < count; ++i) numbers.push_back(dis(gen));
                                     }
                                     else if (dist == "normal")
                                     {
@@ -187,19 +162,12 @@ namespace pooriayousefi
                                         else
                                         {
                                             std::normal_distribution<double> dis(mean, stddev);
-                                            for (int i = 0; i < count; ++i)
-                                            {
-                                                numbers.push_back(dis(gen));
-                                            }
+                                            for (int i = 0; i < count; ++i) numbers.push_back(dis(gen));
                                         }
                                     }
                                     else if (dist == "bernoulli")
                                     {
-                                        double p = *a_opt;
-                                        if (args.value("a", 0.5) == 0.5 && !args.contains("a"))
-                                        {
-                                            p = 0.5;
-                                        }
+                                        double p = args.contains("a") ? *a_opt : 0.5;
                                         if (p < 0.0 || p > 1.0)
                                         {
                                             result = { {"error", "Probability 'a' must be between 0 and 1."}, {"is_error", true} };
@@ -207,10 +175,7 @@ namespace pooriayousefi
                                         else
                                         {
                                             std::bernoulli_distribution dis(p);
-                                            for (int i = 0; i < count; ++i)
-                                            {
-                                                numbers.push_back(dis(gen) ? 1 : 0);
-                                            }
+                                            for (int i = 0; i < count; ++i) numbers.push_back(dis(gen) ? 1 : 0);
                                         }
                                     }
                                     else
@@ -218,11 +183,18 @@ namespace pooriayousefi
                                         result = { {"error", "Unknown distribution: " + dist}, {"is_error", true} };
                                     }
 
-                                    if (count == 1)
+                                    if (!result.contains("error"))
                                     {
-                                        result = { {"result", numbers[0]}, {"is_error", false} };
+                                        // FIX: Added missing else block
+                                        if (count == 1)
+                                        {
+                                            result = { {"result", numbers[0]}, {"is_error", false} };
+                                        }
+                                        else
+                                        {
+                                            result = { {"result", numbers}, {"is_error", false} };
+                                        }
                                     }
-                                    result = { {"result", numbers}, {"is_error", false} };
                                 }                                
                             }
                         }
@@ -244,10 +216,7 @@ namespace pooriayousefi
                         nums.reserve(args["numbers"].size());
                         for (const auto& val : args["numbers"])
                         {
-                            if (val.is_number())
-                            {
-                                nums.push_back(val.get<double>());
-                            }
+                            if (val.is_number()) nums.push_back(val.get<double>());
                         }
                         if (nums.empty())
                         {
@@ -270,21 +239,13 @@ namespace pooriayousefi
                                 sorted_nums[n / 2];
 
                             double sq_sum = 0.0;
-                            for (double x : nums)
-                            {
-                                sq_sum += (x - mean) * (x - mean);
-                            }
+                            for (double x : nums) sq_sum += (x - mean) * (x - mean);
                             double variance = sq_sum / static_cast<double>(n);
                             double std_dev = std::sqrt(variance);
 
                             JSON stats = {
-                                {"count", n},
-                                {"sum", sum},
-                                {"mean", mean},
-                                {"median", median},
-                                {"min", min_val},
-                                {"max", max_val},
-                                {"variance", variance},
+                                {"count", n}, {"sum", sum}, {"mean", mean}, {"median", median},
+                                {"min", min_val}, {"max", max_val}, {"variance", variance},
                                 {"standard_deviation", std_dev}
                             };
                             result = { {"result", stats}, {"is_error", false} };
@@ -308,83 +269,24 @@ namespace pooriayousefi
                         double b = args["b"].get<double>();
                         double result_value = 0.0;
 
-                        if (op == "add")
+                        if (op == "add") result_value = a + b;
+                        else if (op == "subtract") result_value = a - b;
+                        else if (op == "multiply") result_value = a * b;
+                        else if (op == "divide") 
                         {
-                            result_value = a + b;
-                            if (!std::isfinite(result_value))
-                            {
-                                result = { {"error", "Result is not a finite number (overflow, NaN, or infinity)."}, {"is_error", true} };
-                            }
-                            else
-                            {
-                                result = { {"result", result_value}, {"is_error", false} };
-                            }
-                        }
-                        else if (op == "subtract")
-                        {
-                            result_value = a - b;
-                            if (!std::isfinite(result_value))
-                            {
-                                result = { {"error", "Result is not a finite number (overflow, NaN, or infinity)."}, {"is_error", true} };
-                            }
-                            else
-                            {
-                                result = { {"result", result_value}, {"is_error", false} };
-                            }
-                        }
-                        else if (op == "multiply")
-                        {
-                            result_value = a * b;
-                            if (!std::isfinite(result_value))
-                            {
-                                result = { {"error", "Result is not a finite number (overflow, NaN, or infinity)."}, {"is_error", true} };
-                            }
-                            else
-                            {
-                                result = { {"result", result_value}, {"is_error", false} };
-                            }
-                        }
-                        else if (op == "divide")
-                        {
-                            if (b == 0.0)
-                            {
-                                result = { {"error", "Division by zero"}, {"is_error", true} };
-                            }
-                            else
-                            {
-                                result_value = a / b;
-                                if (!std::isfinite(result_value))
-                                {
-                                    result = { {"error", "Result is not a finite number (overflow, NaN, or infinity)."}, {"is_error", true} };
-                                }
-                                else
-                                {
-                                    result = { {"result", result_value}, {"is_error", false} };
-                                }
-                            }
+                            if (b == 0.0) result = { {"error", "Division by zero"}, {"is_error", true} };
+                            else result_value = a / b;
                         }
                         else if (op == "modulo")
                         {
-                            if (b == 0.0)
-                            {
-                                result = { {"error", "Modulo by zero"}, {"is_error", true} };
-                            }
-                            else
-                            {
-                                result_value = std::fmod(a, b);
-                                if (!std::isfinite(result_value))
-                                {
-                                    result = { {"error", "Result is not a finite number (overflow, NaN, or infinity)."}, {"is_error", true} };
-                                }
-                                else
-                                {
-                                    result = { {"result", result_value}, {"is_error", false} };
-                                }
-                            }
+                            if (b == 0.0) result = { {"error", "Modulo by zero"}, {"is_error", true} };
+                            else result_value = std::fmod(a, b);
                         }
-                        else if (op == "power")
+                        else if (op == "power") result_value = std::pow(a, b);
+                        else result = { {"error", "Unknown operation: " + op}, {"is_error", true} };
+
+                        if (!result.contains("error"))
                         {
-                            result_value = std::pow(a, b);
                             if (!std::isfinite(result_value))
                             {
                                 result = { {"error", "Result is not a finite number (overflow, NaN, or infinity)."}, {"is_error", true} };
@@ -393,10 +295,6 @@ namespace pooriayousefi
                             {
                                 result = { {"result", result_value}, {"is_error", false} };
                             }
-                        }
-                        else
-                        {
-                            result = { {"error", "Unknown operation: " + op}, {"is_error", true} };
                         }
                     }                    
                 }
@@ -422,71 +320,39 @@ int main(int argc, char* argv[])
 
     try
     {
-        if (argc != 3)
-        {
-            throw std::invalid_argument("Usage: math_server <host> <port>");
-        }
-
+        if (argc != 3) throw std::invalid_argument("Usage: math_server <host> <port>");
         host = argv[1];
         port = std::stoi(argv[2]);
 
         httplib::Server svr;
+        svr.set_exception_handler([](const httplib::Request&, httplib::Response& res, const std::exception_ptr& ep) {
+            std::string message = "Internal server error";
+            try { if (ep) std::rethrow_exception(ep); } catch (const std::exception& e) { message = e.what(); }
+            res.status = 500;
+            res.set_content(JSON({{"error", message}, {"is_error", true}}).dump(), "application/json");
+        });
 
-        svr.set_exception_handler(
-            [](const httplib::Request&, httplib::Response& res, const std::exception_ptr& ep)
-            {
-                std::string message = "Internal server error";
-                try
-                {
-                    if (ep)
-                    {
-                        std::rethrow_exception(ep);
-                    }
-                }
-                catch (const std::exception& e)
-                {
-                    message = e.what();
-                }
-                res.status = 500;
-                res.set_content(JSON({{"error", message}, {"is_error", true}}).dump(), "application/json");
+        svr.Get("/schema", [](const httplib::Request&, httplib::Response& res) {
+            res.set_content(pooriayousefi::get_schema().dump(), "application/json");
+        });
+
+        svr.Post("/tools/call", [](const httplib::Request& req, httplib::Response& res) {
+            JSON req_body = JSON::parse(req.body, nullptr, false);
+            if (req_body.is_discarded()) {
+                res.status = 400;
+                res.set_content(JSON({{"error", "Invalid json payload"}}).dump(), "application/json");
+                return;
             }
-        );
-
-        svr.Get(
-            "/schema",
-            [](const httplib::Request&, httplib::Response& res)
-            {
-                res.set_content(pooriayousefi::get_schema().dump(), "application/json");
-            }
-        );
-
-        svr.Post(
-            "/tools/call",
-            [](const httplib::Request& req, httplib::Response& res)
-            {
-                JSON req_body = JSON::parse(req.body, nullptr, false);
-
-                if (req_body.is_discarded())
-                {
-                    res.status = 400;
-                    res.set_content(JSON({{"error", "Invalid json payload"}}).dump(), "application/json");
-                    return;
-                }
-
-                std::string tool_name = req_body.value("name", "");
-                JSON arguments = req_body.value("arguments", JSON::object());
-
-                std::cout << "[math REST server] Received call for tool: " << tool_name << std::endl;
-
-                JSON result = pooriayousefi::handle_tool_call(arguments, tool_name);
-                res.set_content(result.dump(), "application/json");
-            }
-        );
+            std::string tool_name = req_body.value("name", "");
+            JSON arguments = req_body.value("arguments", JSON::object());
+            std::cout << "[math REST server] Received call for tool: " << tool_name << std::endl;
+            JSON result = pooriayousefi::handle_tool_call(arguments, tool_name);
+            res.set_content(result.dump(), "application/json");
+        });
 
         std::cout << "math REST server running on http://" << host << ":" << port << std::endl;
         svr.listen(host, port);
         exit_code = EXIT_SUCCESS;
-
     }
     catch(const std::exception& e)
     {

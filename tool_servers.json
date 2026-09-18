@@ -34,15 +34,19 @@
       "enabled": true,
       "timeout_ms": 5000,
       "description": "String tokenization, word counts, JSON extraction, UUID generation"
-    }
-  ],
-  "mcp_servers": [
+    },
     {
-      "name": "mcp-filesystem",
-      "transport": "stdio",
-      "command": ["npx", "-y", "@modelcontextprotocol/server-filesystem", "/tmp"],
+      "name": "time",
+      "url": "http://localhost:4006",
       "enabled": true,
-      "description": "Official Anthropic MCP Filesystem Server"
+      "timeout_ms": 5000,
+      "description": "Get current system date/time in UTC/local time zones"
+    },
+    {
+      "name": "python-runtime",
+      "description": "Python 3 environment with data science, document generation, and Persian RTL support.",
+      "url": "http://127.0.0.1:4007",
+      "enabled": true
     }
   ]
 }

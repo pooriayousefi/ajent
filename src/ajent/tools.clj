@@ -1,8 +1,6 @@
 (ns ajent.tools
   (:require [clojure.data.json :as json]
-            [clj-http.client   :as client]
-            [clojure.string    :as str]
-            [mcp.client        :as mcp])
+            [clj-http.client   :as client])
   (:import [java.io File]))
 
 (def ^:private tool-config-file "tool_servers.json")
@@ -12,12 +10,16 @@
     (if (not (.exists f))
       (do
         (println (str "⚠️  " tool-config-file " not found — no tool servers will be loaded."))
-        {:rest_servers [] :mcp_servers []})
+        {:rest_servers []})
       (try
-        (json/read-str (slurp f) :key-fn keyword)
+        (let [data (json/read-str (slurp f) :key-fn keyword)]
+          ;; Silently ignore any legacy :mcp_servers keys from older configurations
+          (-> data
+              (select-keys [:rest_servers])
+              (update :rest_servers #(or % []))))
         (catch Exception e
           (println (str "⚠️  Could not parse " tool-config-file ": " (.getMessage e)))
-          {:rest_servers [] :mcp_servers []})))))
+          {:rest_servers []})))))
 
 ;; ---------------------------------------------------------------------------
 ;; REST Server Discovery
@@ -51,52 +53,18 @@
       (println (str "    [warn] Could not reach " (or name url) ": " (.getMessage e))))))
 
 ;; ---------------------------------------------------------------------------
-;; MCP Server Discovery
-;; ---------------------------------------------------------------------------
-
-(defn- mcp-schema->openai-schema 
-  "Translates MCP tool schema to OpenAI function-calling format."
-  [mcp-schema server-name]
-  (let [tool-name (:name mcp-schema)
-        params (:inputSchema mcp-schema)]
-    {:type "function"
-     :function {:name tool-name
-                :description (or (:description mcp-schema) (str "Tool from " server-name))
-                :parameters params}}))
-
-(defn- bootstrap-mcp-server [config]
-  (try
-    (let [transport (keyword (:transport config "stdio"))
-          target   (if (= transport :stdio) (:command config) (:url config))
-          name     (:name config "unnamed-mcp")]
-      (println (str "  Connecting to MCP server: " name " via " transport "…"))
-      (let [client (mcp/connect transport target {:client-name "aJent"})
-            tools  (mcp/list-tools client)]
-        (into {}
-              (for [mcp-tool tools
-                    :let [tool-name (:name mcp-tool)
-                          openai-schema (mcp-schema->openai-schema mcp-tool name)]]
-                {tool-name {:schema openai-schema :type :mcp :client client :server name}}))))
-    (catch Exception e
-      (println (str "    [warn] Failed to bootstrap MCP server " (:name config) ": " (.getMessage e)))
-      {})))
-
-;; ---------------------------------------------------------------------------
 ;; Unified Registry
 ;; ---------------------------------------------------------------------------
 
 (defn- build-registry []
-  (let [{:keys [rest_servers mcp_servers]} (load-tool-config)
-        rest-servers (filter #(and (map? %) (not (false? (:enabled %))) (:url %)) rest_servers)
-        mcp-servers  (filter #(and (map? %) (not (false? (:enabled %))) (or (:command %) (:url %))) mcp_servers)]
+  (let [{:keys [rest_servers]} (load-tool-config)
+        rest-servers (filter #(and (map? %) (not (false? (:enabled %))) (:url %)) rest_servers)]
 
     (println "Discovering tools…")
     (println (str "  REST servers configured: " (count rest-servers)))
-    (println (str "  MCP servers configured: " (count mcp-servers)))
 
     (let [rest-results (pmap fetch-http-server-info rest-servers)
-          mcp-results  (doall (map bootstrap-mcp-server mcp-servers)) ; MCP needs sequential bootstrap to manage processes
-          all-tools    (into {} (concat (remove nil? rest-results) mcp-results))]
+          all-tools    (into {} (remove nil? rest-results))]
 
       (println (str "\n✅ Registry built with " (count all-tools) " tool(s):"))
       (doseq [[k v] (sort-by first all-tools)]
@@ -127,19 +95,7 @@
          (filter #(name-set (get-in % [:schema :function :name])))
          (mapv :schema))))
 
-(defn- handle-mcp-call 
-  "Executes an MCP tool and extracts the text response."
-  [info tool-name args-map]
-  (try
-    (let [result (mcp/call-tool (:client info) tool-name args-map)
-          content (:content result)
-          text-blocks (filter #(= (:type %) "text") content)
-          text (str/join "\n" (map :text text-blocks))]
-      (or text (str result)))
-    (catch Exception e
-      (str "Error calling MCP tool " tool-name ": " (.getMessage e)))))
-
-(defn- handle-rest-call 
+(defn- handle-rest-call
   "Executes a REST tool server call."
   [info tool-name args-map]
   (try
@@ -162,11 +118,9 @@
       (str "Error calling HTTP tool " tool-name ": " (.getMessage e)))))
 
 (defn handle-tool-call
-  "Dispatches to the matching tool server (REST or MCP). Returns the result as a string."
+  "Dispatches to the matching REST tool server. Returns the result as a string."
   [tool-name args-map]
   (let [info (get (get-registry) tool-name)]
     (if (not info)
       (str "Error: Tool " tool-name " not found in registry.")
-      (if (= (:type info) :mcp)
-        (handle-mcp-call info tool-name args-map)
-        (handle-rest-call info tool-name args-map)))))
+      (handle-rest-call info tool-name args-map))))
