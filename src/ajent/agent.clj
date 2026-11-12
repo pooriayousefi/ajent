@@ -46,7 +46,7 @@
         (print "   Approve this action? [y/N]: ")
         (flush)
         (let [response (read-line)]
-          (boolean (and response (or (= response "y") (= response "Y")))))
+          (boolean (and response (or (= response "y") (= response "Y"))))))
       true)))
 
 (defn run-agent
