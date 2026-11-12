@@ -1,6 +1,7 @@
 (ns ajent.tools
   "MCP connection registry and OpenAI-compatible tool adapter."
   (:require [clojure.data.json :as json]
+            [clojure.string :as str]
             [mcp.client :as mcp]
             [mcp.openai :as openai])
   (:import [java.io File]))
@@ -18,15 +19,14 @@
         (throw (ex-info "mcp_servers.json must contain an mcp_servers array" {})))
       servers)))
 
-(defn- connect-server [{:keys [name command url timeout_ms timeout-ms cwd env headers
-                               enabled] :as server}]
-  (when-not (and (string? name) (not (clojure.string/blank? name)))
+(defn- connect-server [{:keys [name command url cwd env headers] :as server}]
+  (when-not (and (string? name) (not (str/blank? name)))
     (throw (ex-info "Every MCP server requires a non-empty name" {:server server})))
   (when-not (or (and (sequential? command) (seq command) (nil? url))
                 (and (string? url) (nil? command)))
     (throw (ex-info "MCP server must define exactly one of command or url"
                     {:server name})))
-  (let [options (cond-> {:timeout-ms (or timeout_ms timeout-ms 30000)
+  (let [options (cond-> {:timeout-ms (or (:timeout-ms server) (:timeout_ms server) 30000)
                          :client-info {:name "aJent" :version "2.2.0"}}
                   command (assoc :command command)
                   url (assoc :url url)
