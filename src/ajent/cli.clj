@@ -33,7 +33,7 @@
     "  java -jar ajent.jar online <provider> [model] [temperature]\n\n"
     "Examples:\n"
     "  java -jar ajent.jar local http://localhost:8080 gpt-oss-20b 0.7\n"
-    "  java -jar ajent.jar ollama llama3.1:8b\n"
+    "  java -jar ajent.jar local http://localhost:11434/v1 llama3.1:8b\n"
     "  java -jar ajent.jar online zhipu glm-4.5\n"
     "  java -jar ajent.jar online openai gpt-4o\n\n"
     "Online mode requires an API key; local mode does not use one.\n"
