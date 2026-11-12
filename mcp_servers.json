@@ -1,0 +1,17 @@
+{
+  "mcp_servers": [
+    {
+      "name": "local-tools",
+      "command": ["clojure", "-M", "-m", "your.mcp.server"],
+      "cwd": "./mcp-servers",
+      "enabled": false,
+      "timeout_ms": 30000
+    },
+    {
+      "name": "remote-tools",
+      "url": "http://127.0.0.1:3000/mcp",
+      "enabled": false,
+      "timeout_ms": 30000
+    }
+  ]
+}
