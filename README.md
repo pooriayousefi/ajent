@@ -33,6 +33,41 @@ lein test
 lein uberjar
 ```
 
+## LLM execution modes
+
+aJent has two explicit entry points. Both use the same ReAct agent, MCP tool registry, and conversation loop; only the model provider configuration differs.
+
+### Local model (no API key)
+
+Connect to any local OpenAI-compatible endpoint, such as llama.cpp, Ollama, or LM Studio:
+
+```sh
+lein run local http://127.0.0.1:8080 gpt-oss-20b 0.7
+```
+
+The host URL is normalized to an OpenAI-compatible API base URL (a trailing `/v1` is added when needed). Local mode does not attach an Authorization header.
+
+### Hosted provider (API key required)
+
+Choose a built-in online provider and supply its key through the provider-specific environment variable:
+
+```sh
+export OPENAI_API_KEY="..."
+lein run online openai gpt-4o 0.7
+
+export DEEPSEEK_API_KEY="..."
+lein run online deepseek deepseek-chat 0.7
+
+export OPENROUTER_API_KEY="..."
+lein run online openrouter openai/gpt-4o 0.7
+```
+
+If the provider-specific variable is not set, aJent checks `AJENT_API_KEY` as a universal fallback. Online mode rejects missing keys and providers classified as local. Never put API keys directly in command-line arguments.
+
+Built-in hosted providers include OpenAI, Zhipu, DeepSeek, Groq, Mistral, Together AI, and OpenRouter. Custom entries in `providers.json` can be used in online mode by specifying `api-key-env` (and optionally `mode: "online"`).
+
+Use `lein run --help` to see the supported syntax and provider list.
+
 ## Configure MCP servers
 
 Create or edit mcp_servers.json in the working directory. Each entry must define a unique name and exactly one transport:
@@ -116,7 +151,7 @@ The aJent approval gate is a defense-in-depth check for known destructive tool n
 
 Provider definitions and overrides remain in src/ajent/providers.clj and optional providers.json. The LLM API remains OpenAI-compatible; only the tool integration has moved from the proprietary REST tool-server contract to MCP.
 
-The usual provider environment variables remain supported, with AJENT_API_KEY as a fallback.
+The usual provider environment variables remain supported, with AJENT_API_KEY as a fallback. Select `local` or `online` explicitly as described above.
 
 ## Version
 
