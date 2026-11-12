@@ -17,7 +17,7 @@
     content))
 
 (def ^:private destructive-shell-patterns
-  #"^\\s*(rm|rmdir|del|format|mkfs|dd|shutdown|reboot|halt)\\s+")
+  #"^\s*(rm|rmdir|del|format|mkfs|dd|shutdown|reboot|halt)\s+")
 
 (defn- parse-tool-arguments [tool-call]
   (let [arguments (get-in tool-call [:function :arguments])]
