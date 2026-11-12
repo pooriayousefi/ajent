@@ -57,7 +57,7 @@
                                    (println "Error details:" data))
                                  (conj new-history
                                        {:role "assistant"
-                                        :content "I'm sorry, I encountered an unexpected error and couldn't process that request."}))]
+                                        :content "I'm sorry, I encountered an unexpected error and couldn't process that request."})))]
           (if final-messages
             (let [clean (filterv #(not= (:role %) "system") final-messages)
                   window (apply-sliding-window clean (:history-window config))]
