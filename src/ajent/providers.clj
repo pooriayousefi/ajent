@@ -54,7 +54,8 @@
                  :max-tokens     8192
                  :max-iterations 40
                  :history-window 60}
-   "groq"       {:description    "Groq (fast inference)"
+   "groq"       {:mode           :online
+                 :description    "Groq (fast inference)"
                  :base-url       "https://api.groq.com/openai/v1"
                  :default-model  "llama-3.3-70b-versatile"
                  :api-key-env    "GROQ_API_KEY"
@@ -77,7 +78,8 @@
                  :max-tokens     4096
                  :max-iterations 40
                  :history-window 60}
-   "openrouter" {:description    "OpenRouter (many models)"
+   "openrouter" {:mode           :online
+                 :description    "OpenRouter (many models)"
                  :base-url       "https://openrouter.ai/api/v1"
                  :default-model  "openai/gpt-4o"
                  :api-key-env    "OPENROUTER_API_KEY"
