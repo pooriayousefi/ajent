@@ -6,76 +6,50 @@
 
 (defn build-system-prompt []
   (str
-   "You are the aJent Orchestrator, a highly capable AI assistant with access to a fleet of microservice tools.\n"
+   "You are the aJent Orchestrator, a highly capable AI assistant with access to MCP tools.\n"
    "Your core directive is to accurately accomplish the user's tasks using these tools.\n\n"
    "--- FILE SYSTEM RULES ---\n"
-   "You have FULL, unrestricted access to the host machine's file system.\n"
-   "You MUST use exact absolute paths for all file, directory, and PDF tools. Do not guess paths;\n"
+   "Use exact absolute paths for all file, directory, and document tools. Do not guess paths; "
    "if a path is ambiguous, ask the user for clarification.\n\n"
    "--- ADVANCED EXECUTION RULES ---\n"
-   "1. CONCURRENT EXECUTION: If the user requests multiple independent tasks, DO NOT do them sequentially.\n"
-   "   Call multiple tools in a single response to execute them concurrently.\n"
-   "2. DUAL-PATH VERIFICATION: If you are uncertain which tool or which arguments will yield the correct result,\n"
-   "   call the tool with multiple variations concurrently, compare the observations, and use the best result.\n"
-   "3. ERROR RECOVERY: If a tool returns an error, DO NOT report failure immediately.\n"
-   "   Analyze the error message, adjust your arguments or choose a different tool, and try again.\n"
-   "4. CONTEXTUAL RESOLUTION: You hold the entire conversation history. If the user says 'that file' or 'the result',\n"
-   "   resolve what they mean from the conversation history before calling a tool.\n"
-   "5. PLANNING: Before calling tools, explicitly outline your step-by-step plan in your reasoning.\n\n"
-   "--- LARGE CONTENT RULES (CRITICAL) ---\n"
-   "6. NEVER generate massive text strings inside JSON tool arguments. If you need to write a long document\n"
-   "   (like a story, report, or PDF), DO NOT pass the whole text in one `create_pdf` or `write_text_file` call. \n"
-   "   Instead, create the file with a short first sentence, and then use `append_text_file` or `append_text_to_pdf`\n"
-   "   multiple times to build the document in smaller chunks.\n\n"
-   "--- PYTHON AS A SERVICE ---\n"
-   "You have access to the `execute_python` tool, a secure Python 3 environment with powerful libraries.\n"
-   "Available libraries: numpy, pandas, scipy, matplotlib, pymupdf (PDF), python-docx (Word), python-pptx (PowerPoint), openpyxl (Excel), requests, beautifulsoup4, arabic-reshaper, python-bidi.\n"
-   "RULES FOR PYTHON:\n"
-   "a. FILE OUTPUT: When generating files (PDFs, Excel, Word, images), ALWAYS save them to the `/app/output` directory. This is the ONLY directory mapped to the user's host machine.\n"
-   "b. CONTEXT WINDOW: Keep `print()` statements minimal. Do not print entire datasets or massive file contents to stdout. Process data in Python, save outputs to `/app/output`, and print only a brief success message or a small summary.\n"
-   "c. PERSIAN/RTL TEXT: If generating Persian or Arabic text in PDFs or matplotlib charts, you MUST reshape the text using `arabic_reshaper` and apply BiDi using `python-bidi` before inserting it. Fonts like 'Vazirmatn' and 'B Nazanin' are pre-installed.\n"
-   "d. SECURITY: Python is strictly for data manipulation and file creation. Do NOT use Python to execute shell commands (`os.system`, `subprocess`), delete files, or modify the host file system.\n\n"
+   "1. CONCURRENT EXECUTION: Call independent tools in the same assistant response; aJent executes them concurrently.\n"
+   "2. ERROR RECOVERY: Analyze tool errors, correct arguments where possible, and retry when appropriate.\n"
+   "3. CONTEXTUAL RESOLUTION: Resolve references such as 'that file' from the conversation history.\n"
+   "4. PLANNING: Plan before executing multi-step tasks.\n\n"
+   "--- LARGE CONTENT RULES ---\n"
+   "Avoid massive text values in tool arguments. Prefer incremental writes or server-side file operations.\n\n"
+   "--- PYTHON TOOL RULES ---\n"
+   "When using a Python MCP tool, save generated files to the directory exposed by that server. "
+   "Keep printed output concise and do not use Python to bypass the host security gate.\n\n"
    "--- SECURITY RULES ---\n"
-   "7. DESTRUCTION GATE: You are forbidden from performing destructive operations\n"
-   "   (like deleting files or directories) autonomously.\n"
-   "   If you need to delete something, you MUST ask the user for explicit permission first.\n\n"
-   "Always synthesize the final tool results into a clear, natural language answer for the user."))
+   "Destructive operations require explicit user approval. Never attempt to bypass aJent's approval gate.\n\n"
+   "Always synthesize tool results into a clear, natural-language answer."))
 
 (defn- apply-sliding-window
-  "Keeps only the most recent N messages to prevent endless context growth.
-   Safely drops leading 'tool' or 'assistant' tool-call messages to prevent
-   OpenAI API 400 errors (tool_calls must be accompanied by their tool responses)."
+  "Keeps the most recent N messages without splitting assistant tool calls from their responses."
   [messages window-size]
   (if (<= (count messages) window-size)
     messages
-    (loop [msgs (subvec messages (- (count messages) window-size))]
+    (loop [msgs (subvec (vec messages) (- (count messages) window-size))]
       (let [first-msg (first msgs)]
         (cond
-          (nil? first-msg)
-          []
-
-          (= (:role first-msg) "tool")
-          (recur (rest msgs))
-
+          (nil? first-msg) []
+          (= (:role first-msg) "tool") (recur (vec (rest msgs)))
           (and (= (:role first-msg) "assistant") (:tool_calls first-msg))
-          (recur (drop-while #(= (:role %) "tool") (rest msgs)))
+          (recur (vec (drop-while #(= (:role %) "tool") (rest msgs))))
+          :else (vec msgs))))))
 
-          :else
-          (vec msgs))))))
-
-(defn- chat-loop
-  "Interactive REPL: read input → run agent → window history → repeat."
-  [config system-prompt]
+(defn- chat-loop [config system-prompt]
   (loop [history []]
     (print "\naJent> ")
     (flush)
     (let [input (read-line)]
       (if (or (nil? input) (contains? #{"exit" "quit"} input))
         (println "Goodbye!")
-        (let [new-history    (conj history {:role "user" :content input})
+        (let [new-history (conj history {:role "user" :content input})
               final-messages (try
-                               (agent/run-agent config system-prompt
-                                                new-history (:max-iterations config))
+                               (agent/run-agent config system-prompt new-history
+                                                (:max-iterations config))
                                (catch Exception e
                                  (println (str "\n⚠️ Unhandled exception in agent execution: "
                                                (.getMessage e)))
@@ -83,31 +57,30 @@
                                    (println "Error details:" data))
                                  (conj new-history
                                        {:role "assistant"
-                                        :content "I'm sorry, I encountered an unexpected error and couldn't process that request."})))]
+                                        :content "I'm sorry, I encountered an unexpected error and couldn't process that request."}))]
           (if final-messages
-            (let [clean  (filterv #(not= (:role %) "system") final-messages)
+            (let [clean (filterv #(not= (:role %) "system") final-messages)
                   window (apply-sliding-window clean (:history-window config))]
               (recur window))
             (recur history)))))))
 
 (defn run
-  "Application entry point: parse args → banner → config summary →
-   tool discovery → interactive chat."
+  "Application entry point: resolve provider, connect MCP servers, and start chat."
   [& args]
   (cond
     (cli/version-requested? args) (println (str "aJent " cli/version))
-
-    (cli/help-requested? args)    (cli/print-usage)
-
+    (cli/help-requested? args) (cli/print-usage)
     :else
-    (let [config        (cli/parse-args args)
+    (let [config (cli/parse-args args)
           system-prompt (build-system-prompt)]
       (cli/print-banner)
       (cli/print-startup-summary config)
       (when (and (:api-key-env config) (str/blank? (:api-key config)))
         (println (str "  ⚠ " (:api-key-env config)
                       " is not set — the provider will likely reject requests (401).")))
-      ;; Force tool discovery up-front so the fleet is visible before chatting.
-      (tools/get-tools)
-      (println "\n  Ready. Type 'exit' or 'quit' to stop.")
-      (chat-loop config system-prompt))))
+      (try
+        (tools/get-tools)
+        (println "\n  Ready. Type 'exit' or 'quit' to stop.")
+        (chat-loop config system-prompt)
+        (finally
+          (tools/close-connections!))))))
