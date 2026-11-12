@@ -14,7 +14,7 @@ The model remains the central orchestrator. aJent discovers tools from multiple 
 - **Safety:** aJent's human approval gate runs before destructive tool calls are dispatched.
 - **Context:** Sliding history window and configurable observation truncation.
 
-The MCP implementation is provided by [mcp.clj](https://github.com/pooriayousefi/mcp.clj). aJent uses its client, protocol implementation, and OpenAI tool adapter rather than maintaining a second MCP implementation.
+The MCP client, protocol, and OpenAI tool adapter from [mcp.clj](https://github.com/pooriayousefi/mcp.clj) are integrated under `src/mcp/`. This keeps the reusable MCP library independently maintained while making this aJent branch self-contained; the vendored namespaces are pinned to mcp.clj commit `6eb31df`.
 
 ## Requirements
 
@@ -25,7 +25,7 @@ The MCP implementation is provided by [mcp.clj](https://github.com/pooriayousefi
 
 ## Build
 
-The mcp.clj 1.0.0 library is a dependency from Clojars.
+The MCP transport uses `http-kit`; the MCP client/protocol/adapter namespaces are vendored from mcp.clj.
 
 ```sh
 lein deps
