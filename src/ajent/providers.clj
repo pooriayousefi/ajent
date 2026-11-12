@@ -9,67 +9,77 @@
 
 (def ^:private built-in-providers
   ;; :base-url nil means "supply the host URL on the command line" (local mode).
-  {"local"      {:description    "Custom local OpenAI-compatible server"
+  {"local"      {:mode           :local
+                 :description    "Custom local OpenAI-compatible server"
                  :base-url       nil
                  :default-model  "qwen3:8b"
                  :max-tokens     8192
                  :max-iterations 15
                  :history-window 20}
-   "ollama"     {:description    "Ollama (local)"
+   "ollama"     {:mode           :local
+                 :description    "Ollama (local)"
                  :base-url       "http://localhost:11434/v1"
                  :default-model  "qwen3:8b"
                  :max-tokens     8192
                  :max-iterations 15
                  :history-window 20}
-   "lmstudio"   {:description    "LM Studio (local)"
+   "lmstudio"   {:mode           :local
+                 :description    "LM Studio (local)"
                  :base-url       "http://localhost:1234/v1"
                  :default-model  "local-model"
                  :max-tokens     8192
                  :max-iterations 15
                  :history-window 20}
-   "zhipu"      {:description    "Zhipu AI (GLM models)"
+   "zhipu"      {:mode           :online
+                 :description    "Zhipu AI (GLM models)"
                  :base-url       "https://open.bigmodel.cn/api/paas/v4"
                  :default-model  "glm-4-plus"
                  :api-key-env    "ZHIPU_API_KEY"
                  :max-tokens     4096
                  :max-iterations 40
                  :history-window 60}
-   "openai"     {:description    "OpenAI"
+   "openai"     {:mode           :online
+                 :description    "OpenAI"
                  :base-url       "https://api.openai.com/v1"
                  :default-model  "gpt-4o"
                  :api-key-env    "OPENAI_API_KEY"
                  :max-tokens     4096
                  :max-iterations 40
                  :history-window 60}
-   "deepseek"   {:description    "DeepSeek"
+   "deepseek"   {:mode           :online
+                 :description    "DeepSeek"
                  :base-url       "https://api.deepseek.com/v1"
                  :default-model  "deepseek-chat"
                  :api-key-env    "DEEPSEEK_API_KEY"
                  :max-tokens     8192
                  :max-iterations 40
                  :history-window 60}
-   "groq"       {:description    "Groq (fast inference)"
+   "groq"       {:mode           :online
+                 :description    "Groq (fast inference)"
                  :base-url       "https://api.groq.com/openai/v1"
                  :default-model  "llama-3.3-70b-versatile"
                  :api-key-env    "GROQ_API_KEY"
                  :max-tokens     4096
                  :max-iterations 40
                  :history-window 60}
-   "mistral"    {:description    "Mistral AI"
+   "mistral"    {:mode           :online
+                 :description    "Mistral AI"
                  :base-url       "https://api.mistral.ai/v1"
                  :default-model  "mistral-large-latest"
                  :api-key-env    "MISTRAL_API_KEY"
                  :max-tokens     4096
                  :max-iterations 40
                  :history-window 60}
-   "together"   {:description    "Together AI"
+   "together"   {:mode           :online
+                 :description    "Together AI"
                  :base-url       "https://api.together.xyz/v1"
                  :default-model  "meta-llama/Llama-3.3-70B-Instruct-Turbo"
                  :api-key-env    "TOGETHER_API_KEY"
                  :max-tokens     4096
                  :max-iterations 40
                  :history-window 60}
-   "openrouter" {:description    "OpenRouter (many models)"
+   "openrouter" {:mode           :online
+                 :description    "OpenRouter (many models)"
                  :base-url       "https://openrouter.ai/api/v1"
                  :default-model  "openai/gpt-4o"
                  :api-key-env    "OPENROUTER_API_KEY"
