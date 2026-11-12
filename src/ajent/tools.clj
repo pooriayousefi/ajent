@@ -49,7 +49,7 @@
                         (assoc acc (:name server) conn))
                       (catch Exception e
                         (println (str "  ✗ " (:name server) ": " (.getMessage e)))
-                        acc))
+                        acc)))
                   (array-map)
                   servers)
           {:keys [tools routes]} (openai/tools connections)]
