@@ -1,6 +1,7 @@
 
 [![Clojars Project](https://img.shields.io/clojars/v/org.clojars.pooriayousefi/ajent.svg)]
 
+
 # aJent: MCP-native Agentic AI Framework
 
 aJent is a Clojure single-agent runtime that uses an OpenAI-compatible Chat Completions API as its reasoning interface and **Model Context Protocol (MCP)** as its native tool interface.
