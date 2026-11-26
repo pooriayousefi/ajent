@@ -35,6 +35,10 @@
                   (seq headers) (assoc :headers headers))]
     (mcp/connect options)))
 
+(defn- close-registry! [registry]
+  (doseq [[_ conn] (:connections registry)]
+    (try (mcp/close! conn) (catch Exception _))))
+
 (defn- build-registry []
   (let [servers (filterv #(and (map? %) (not (false? (:enabled %)))) (load-config))
         names (mapv :name servers)]
@@ -52,10 +56,15 @@
                         acc)))
                   (array-map)
                   servers)
-          {:keys [tools routes]} (openai/tools connections)]
-      (println (str "\n✓ MCP registry built: " (count connections)
-                    " server(s), " (count tools) " tool(s)"))
-      {:connections connections :tools tools :routes routes})))
+          registry {:connections connections}]
+      (try
+        (let [{:keys [tools routes]} (openai/tools connections)]
+          (println (str "\n✓ MCP registry built: " (count connections)
+                        " server(s), " (count tools) " tool(s)"))
+          (assoc registry :tools tools :routes routes))
+        (catch Exception e
+          (close-registry! registry)
+          (throw e))))))
 
 (defn- get-registry []
   (or @registry-cache
@@ -67,8 +76,7 @@
   (let [old @registry-cache
         fresh (build-registry)]
     (reset! registry-cache fresh)
-    (doseq [[_ conn] (:connections old)]
-      (try (mcp/close! conn) (catch Exception _)))
+    (close-registry! old)
     fresh))
 
 (defn get-tools
@@ -95,7 +103,6 @@
 
 (defn close-connections! []
   (when-let [registry @registry-cache]
-    (doseq [[_ conn] (:connections registry)]
-      (try (mcp/close! conn) (catch Exception _)))
+    (close-registry! registry)
     (reset! registry-cache nil))
   nil)

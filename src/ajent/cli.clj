@@ -1,7 +1,8 @@
 (ns ajent.cli
   "Command-line entrance: argument parsing, banner, usage, startup summary."
   (:require [ajent.providers :as providers]
-            [clojure.string  :as str]))
+            [clojure.string  :as str])
+  (:import [java.net URI URISyntaxException]))
 
 (def ^:const version "2.2.0")
 
@@ -59,9 +60,7 @@
       "\n" (row "Endpoint"    base-url)
       "\n" (row "Model"       model-name)
       "\n" (row "Temperature" temperature)
-      "\n" (row "API Key"     (if (str/blank? api-key)
-                                "none"
-                                (str (subs api-key 0 (min 6 (count api-key))) "…")))
+      "\n" (row "API Key"     (if (str/blank? api-key) "none" "configured"))
       "\n" (row "Iterations"  (str max-iterations " / turn"))
       "\n" (row "History"     (str history-window " messages"))
       "\n"))))
@@ -78,6 +77,17 @@
     (if (str/ends-with? s "/")
       (clean-url (subs s 0 (dec (count s))))
       s)))
+
+(defn- endpoint-url? [^String value]
+  (try
+    (let [uri (URI. value)]
+      (and (contains? #{"http" "https"} (.getScheme uri))
+           (.getHost uri)
+           (nil? (.getUserInfo uri))
+           (nil? (.getRawQuery uri))
+           (nil? (.getRawFragment uri))
+           (or (= -1 (.getPort uri)) (<= 1 (.getPort uri) 65535))))
+    (catch URISyntaxException _ false)))
 
 (defn- resolve-common-config [provider-id provider base-url model-name temp-str api-key]
   (let [model (or (when-not (str/blank? (str model-name)) model-name)
@@ -105,10 +115,11 @@
 (defn- parse-local-args [[host model temp]]
   (when (str/blank? host)
     (fail! "Local mode requires a host URL. Example: aJent local http://localhost:8080 gpt-oss-20b 0.7"))
-  (let [provider (providers/resolve-provider "local")]
-    (resolve-common-config "local" provider
-                           (providers/host->base-url host)
-                           model temp nil)))
+  (let [base-url (providers/host->base-url host)]
+    (when-not (endpoint-url? base-url)
+      (fail! "Local mode requires an absolute HTTP(S) host URL."))
+    (resolve-common-config "local" (providers/resolve-provider "local")
+                           base-url model temp nil)))
 
 (defn- parse-online-args [[provider-id model temp]]
   (when (str/blank? provider-id)
@@ -120,8 +131,8 @@
                         (and (nil? provider-mode) (not (str/blank? (:api-key-env provider)))))
             (fail! (str "'" provider-id "' is not configured as an online provider.")))
         base-url (clean-url (:base-url provider))
-        _ (when (str/blank? base-url)
-            (fail! (str "Online provider '" provider-id "' has no base-url.")))
+        _ (when-not (endpoint-url? base-url)
+            (fail! (str "Online provider '" provider-id "' requires an absolute HTTP(S) base-url.")))
         api-key (or (some-> (:api-key-env provider) System/getenv)
                     (System/getenv "AJENT_API_KEY"))
         _ (when (str/blank? api-key)

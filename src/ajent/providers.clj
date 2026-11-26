@@ -1,7 +1,7 @@
 (ns ajent.providers
   "Provider registry: knows how to reach every OpenAI-compatible backend,
    whether it's a local server (offline) or a hosted API (online).
-   Built-in definitions can be overridden or extended via providers.json
+   Built-in definitions can be overridden or extended via an optional providers.json
    in the working directory."
   (:require [clojure.data.json :as json]
             [clojure.string    :as str])
@@ -12,8 +12,8 @@
   {"local"      {:mode           :local
                  :description    "Custom local OpenAI-compatible server"
                  :base-url       nil
-                 :default-model  "qwen3:8b"
-                 :max-tokens     8192
+                 :default-model  "qwen3:14b"
+                 :max-tokens     16384
                  :max-iterations 15
                  :history-window 20}
    "ollama"     {:mode           :local
@@ -33,9 +33,9 @@
    "zhipu"      {:mode           :online
                  :description    "Zhipu AI (GLM models)"
                  :base-url       "https://open.bigmodel.cn/api/paas/v4"
-                 :default-model  "glm-4-plus"
+                 :default-model  "glm-4.5"
                  :api-key-env    "ZHIPU_API_KEY"
-                 :max-tokens     4096
+                 :max-tokens     8192
                  :max-iterations 40
                  :history-window 60}
    "openai"     {:mode           :online

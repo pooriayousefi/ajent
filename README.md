@@ -104,13 +104,8 @@ Create or edit mcp_servers.json in the working directory. Each entry must define
 
 For stdio servers, cwd and env are optional. For HTTP servers, headers may contain authentication headers. Set enabled to false to disable an entry. The default request timeout is 30 seconds.
 
-The repository includes a starter mcp_servers.json with disabled examples. Replace the example command and URL with your own MCP servers before enabling them.
-
-### Existing REST tool servers
-
-The previous aJent tool-server contract (GET /schema and POST /tools/call) is no longer consumed by aJent. Those servers must be migrated to MCP or wrapped by an MCP server. An ordinary HTTP URL is not automatically an MCP endpoint.
-
-The old tool_servers.json is retained only as a deprecation notice; it is not loaded.
+The repository ships an empty MCP server list. Add the command or URL of each
+MCP server you want to use. With an empty list, aJent runs as model-only chat.
 
 ## Run
 
@@ -153,7 +148,10 @@ The aJent approval gate is a defense-in-depth check for known destructive tool n
 
 ## Configuration
 
-Provider definitions and overrides remain in src/ajent/providers.clj and optional providers.json. The LLM API remains OpenAI-compatible; only the tool integration has moved from the proprietary REST tool-server contract to MCP.
+Built-in model providers live in `src/ajent/providers.clj`. Create an optional
+local `providers.json` only when you need to add or override a provider. The
+file is ignored by Git. aJent connects to the model endpoint you supply.
+All tool discovery and execution use MCP, over stdio or Streamable HTTP.
 
 The usual provider environment variables remain supported, with AJENT_API_KEY as a fallback. Select `local` or `online` explicitly as described above.
 

@@ -1,4 +1,0 @@
-{
-  "deprecated": true,
-  "message": "aJent 2.2 uses mcp_servers.json. REST tool servers must expose MCP or be wrapped by an MCP server."
-}

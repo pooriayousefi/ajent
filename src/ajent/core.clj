@@ -75,9 +75,6 @@
           system-prompt (build-system-prompt)]
       (cli/print-banner)
       (cli/print-startup-summary config)
-      (when (and (:api-key-env config) (str/blank? (:api-key config)))
-        (println (str "  ⚠ " (:api-key-env config)
-                      " is not set — the provider will likely reject requests (401).")))
       (try
         (tools/get-tools)
         (println "\n  Ready. Type 'exit' or 'quit' to stop.")

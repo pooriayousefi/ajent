@@ -1,27 +1,9 @@
-# Clojure
-target/
-classes/
-.cpcache/
+/target/
+/classes/
+/.cpcache/
+/.clj-kondo/
 *.jar
 pom.xml
 .nrepl-port
-
-# Python
-__pycache__/
-*.py[cod]
-venv/
-.venv/
-env/
-
-# C/C++
-*.o
-*.so
-*.exe
-*.out
-bin/
-build/
-
-# macOS
+/providers.json
 .DS_Store
-
-logo.png
