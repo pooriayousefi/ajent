@@ -1,9 +1,5 @@
 (ns ajent.config
-  (:require [clojure.data.json :as json]
-            [clojure.java.io :as io]))
-
-(defn find-file [& paths]
-  (some #(when (.isFile (io/file %)) %) paths))
+  (:require [clojure.data.json :as json]))
 
 (defn read-json [path]
   (try

@@ -113,8 +113,7 @@ to `cfg/mcp_servers.json`. For a legacy stdio command array, move its first
 element to `transports.stdio.command` and the rest to `args` under the same
 section. Move `env` there as well. For a standard HTTP endpoint, put its host
 and port under `transports.http`. Legacy flat entries still work for custom
-URLs or headers. The root `mcp_servers.json` is a fallback when the file
-under `cfg/` is absent.
+URLs or headers when placed in `cfg/mcp_servers.json`.
 
 The old positional `local` and `online` commands still work with the legacy
 provider registry and optional root `providers.json`. Move custom models to

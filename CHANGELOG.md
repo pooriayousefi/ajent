@@ -2,6 +2,7 @@
 
 ## 2.3.0
 
+- Use cfg/mcp_servers.json as the sole MCP server configuration.
 - Add eight selectable specialist prompts adapted from SAURON.
 - Adopt the SAURON configuration layout, nested MCP transports, and startup flags.
 - Include nine optional C++ MCP tool servers under tools/ with a build target and example configuration.

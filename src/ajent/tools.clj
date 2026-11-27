@@ -9,8 +9,7 @@
 (defonce ^:private registry-cache (atom nil))
 
 (defn- load-config []
-  (let [path (or (config/find-file "cfg/mcp_servers.json" "mcp_servers.json")
-                 "cfg/mcp_servers.json")
+  (let [path "cfg/mcp_servers.json"
         servers (:mcp_servers (config/read-json path))]
     (when-not (and (vector? servers) (every? map? servers))
       (throw (ex-info (str path " must contain an mcp_servers array of objects")

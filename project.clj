@@ -1,5 +1,5 @@
 (defproject org.clojars.pooriayousefi/ajent "2.3.0"
-  :description "aJent: MCP-native Agentic AI Framework with offline + online LLM provider support"
+  :description "Clojure agent runtime for local and hosted language models, named personas, and MCP tools"
   :url "https://github.com/pooriayousefi/ajent"
   :license {:name "Eclipse Public License 2.0"
             :url "https://www.eclipse.org/legal/epl-2.0/"}
