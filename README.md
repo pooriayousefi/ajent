@@ -115,10 +115,12 @@ git submodule update --init --recursive
 make -C tools
 ```
 
-Use [tools/mcp_servers.example.json](tools/mcp_servers.example.json) as a
-template for `cfg/mcp_servers.json`. Start aJent from the repository root
-so the binary paths resolve. The example enables all nine servers over stdio
-and sets `MCPXX_SHELL_ENABLED=1` in the shell server's `stdio.env`. The memory
+The checked-in `cfg/mcp_servers.json` enables all nine servers over stdio.
+Start aJent from the repository root after building them so the binary paths
+resolve. For model-only chat, set `mcp_servers` to an empty array. To
+restore the bundled settings, use
+[tools/mcp_servers.example.json](tools/mcp_servers.example.json).
+The shell entry sets `MCPXX_SHELL_ENABLED=1` in `stdio.env`. The memory
 server stores `sauron_memory.json` in the working directory.
 
 ## Run
