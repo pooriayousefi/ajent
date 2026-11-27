@@ -75,6 +75,14 @@ Add a named prompt to `cfg/system_prompts.json` and select it with
 `--agent NAME`. The default is `orchestrator`. A persona changes the system
 prompt and uses the same configured tool registry.
 
+Built-in personas are `orchestrator`, `cybersentinel` (defensive security),
+`system-observer`, `resume-specialist`, `education-advisor`, `code-reviewer`,
+`qa-engineer`, `project-planner`, and `git-specialist`.
+
+```sh
+lein run --agent code-reviewer --provider local --model gpt-oss-20b
+```
+
 ### MCP servers
 
 Each entry in `mcp_servers` has a unique `name` and two transport sections.

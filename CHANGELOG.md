@@ -2,6 +2,7 @@
 
 ## 2.3.0
 
+- Add eight selectable specialist prompts adapted from SAURON.
 - Adopt the SAURON configuration layout, nested MCP transports, and startup flags.
 - Include nine optional C++ MCP tool servers under tools/ with a build target and example configuration.
 - Use the published mcp.clj 1.0.3 dependency for MCP client support.
