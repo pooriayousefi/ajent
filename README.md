@@ -1,173 +1,138 @@
+# aJent
 
 [![Clojars Project](https://img.shields.io/clojars/v/org.clojars.pooriayousefi/ajent.svg)](https://clojars.org/org.clojars.pooriayousefi/ajent)
 
+aJent is a Clojure/JVM agent runtime that connects an OpenAI-compatible Chat
+Completions endpoint to Model Context Protocol (MCP) tools. Select a persona,
+provider, and model at startup. aJent discovers tools from the configured
+servers, sends their schemas to the model, and returns tool results to the
+model until it answers or reaches the turn limit.
 
-# aJent: MCP-native Agentic AI Framework
+## Quick start
 
-aJent is a Clojure single-agent runtime that uses an OpenAI-compatible Chat Completions API as its reasoning interface and **Model Context Protocol (MCP)** as its native tool interface.
-
-The model remains the central orchestrator. aJent discovers tools from multiple MCP servers, converts their JSON Schemas into OpenAI-compatible function tools, executes returned tool calls concurrently, and appends the observations to the conversation.
-
-## Architecture
-
-- **LLM provider:** OpenAI-compatible REST API (local or hosted).
-- **Tool protocol:** MCP 2026-07-28.
-- **Local tools:** MCP servers launched as child processes over stdio.
-- **Remote tools:** MCP servers accessed over Streamable HTTP.
-- **Orchestration:** Single-agent ReAct loop with concurrent tool execution.
-- **Safety:** aJent's human approval gate runs before destructive tool calls are dispatched.
-- **Context:** Sliding history window and configurable observation truncation.
-
-aJent uses [mcp.clj](https://github.com/pooriayousefi/mcp.clj) for MCP transport, protocol handling, and conversion to OpenAI-compatible tool schemas.
-
-## Requirements
-
-- Java 17+
-- Leiningen
-- An OpenAI-compatible model endpoint
-- MCP servers implementing the supported MCP 2026-07-28 tools surface
-
-## Build
-
-Leiningen resolves the published `mcp.clj` dependency from Clojars.
+You need Java 17 or newer, Leiningen, Git, Make, and a C++20 compiler for the
+bundled servers. Start an OpenAI-compatible model server separately. The
+default local model entry expects `gpt-oss-20b` at `http://127.0.0.1:8080/v1`.
+Adjust the model name and endpoint in `cfg/ai_providers.json` to match your server.
 
 ```sh
-lein deps
-lein test
-lein uberjar
-```
-
-## Configuration
-
-aJent reads configuration relative to the working directory. The filenames,
-JSON structures, and launch flags follow SAURON.
-
-| File | Contents |
-| --- | --- |
-| `cfg/ai_providers.json` | A `providers` array with provider names and model entries. Each model has a `model-name` and a full OpenAI-compatible `base-url`. Set `temp` and `max-tokens` per model. |
-| `cfg/mcp_servers.json` | An `mcp_servers` array with one uniquely named entry per server and settings for both transports. |
-| `cfg/system_prompts.json` | An object mapping persona names to system prompts. The default persona is `orchestrator`. |
-
-A hosted provider or model can name its API key environment variable with
-`api-key-env`. Model settings take precedence over provider settings. If the
-named variable is unset, aJent checks `AJENT_API_KEY`. Store the key itself in
-the environment.
-
-### MCP transports
-
-```json
-{
-  "mcp_servers": [
-    {
-      "name": "time",
-      "transports": {
-        "stdio": {
-          "enable": true,
-          "command": "./tools/time-mcp-server/bin/time_mcp_tool_server",
-          "args": [],
-          "env": {}
-        },
-        "http": {
-          "enable": false,
-          "host": "127.0.0.1",
-          "port": 8091
-        }
-      }
-    }
-  ]
-}
-```
-
-- **Stdio only** launches the configured command with `stdio` followed by
-  `args`, and passes `env` to the child process.
-- **HTTP only** connects to an already-running server at `http://HOST:PORT/mcp`.
-- **Both** launches the command with `both HOST PORT` followed by `args`.
-  aJent communicates with the child over stdio.
-- **Both disabled** skips the server. With no enabled servers, aJent runs as
-  model-only chat. An enabled server that fails startup or discovery stops
-  startup with an error naming the server.
-
-### Migration
-
-Move custom MCP entries into `cfg/mcp_servers.json`. The first element of
-a legacy command array becomes `transports.stdio.command`, any remaining
-elements become `args`, and `env` moves under `stdio`. A standard HTTP URL
-becomes `transports.http.host` and `port`. For custom URLs or auth headers,
-aJent still accepts legacy flat entries. It reads the root
-`mcp_servers.json` only when the file under `cfg/` is absent.
-
-The previous positional `local` and `online` commands remain available for
-compatibility. They still use the old provider defaults and optional root
-`providers.json` overrides. Move custom models into `cfg/ai_providers.json`
-to select them with `--provider` and `--model`.
-
-## Bundled C++ MCP tool servers
-
-The `tools/` directory pins the standalone directory, file, Git, memory,
-random-number, shell, statistics, time, and utility servers as Git submodules.
-Their nested `mcpxx` submodules supply the C++ MCP implementation.
-
-From the repository root, initialize the sources and build the servers with
-Make and a C++20 compiler:
-
-```sh
-git submodule update --init --recursive
+git clone --recurse-submodules https://github.com/pooriayousefi/ajent.git
+cd ajent
 make -C tools
-```
-
-The checked-in `cfg/mcp_servers.json` enables all nine servers over stdio.
-Start aJent from the repository root after building them so the binary paths
-resolve. For model-only chat, set `mcp_servers` to an empty array. To
-restore the bundled settings, use
-[tools/mcp_servers.example.json](tools/mcp_servers.example.json).
-The shell entry sets `MCPXX_SHELL_ENABLED=1` in `stdio.env`. The memory
-server stores `sauron_memory.json` in the working directory.
-
-## Run
-
-Start your model endpoint. For example, with llama.cpp:
-
-```sh
-llama-server --jinja -m ~/llms/model.gguf \
-  --n-gpu-layers 999 --ctx-size 16384 \
-  --host 127.0.0.1 --port 8080
-```
-
-Set the model name and endpoint in `cfg/ai_providers.json`, then launch aJent:
-
-```sh
+lein test
 lein run --agent orchestrator --provider local --model gpt-oss-20b
 ```
 
-Or build and run the uberjar:
+For an existing checkout, initialize the nested submodules with
+`git submodule update --init --recursive` before building the tools. Run
+aJent from the repository root so the `cfg/` files and relative server
+paths resolve. Type `exit` or `quit` to leave the console.
+
+## How a turn works
+
+1. aJent loads the selected system prompt and model settings, starts or
+   connects to the enabled MCP servers, and discovers their tools.
+2. It sends the prompt, conversation history, and tool schemas to the
+   configured model's `/chat/completions` endpoint.
+3. If the model requests tools, aJent resolves each tool to its server. It
+   checks whether the call requires approval before dispatching approved calls
+   concurrently.
+4. It returns each result with the matching tool-call ID and asks the model
+   to continue. A final response or the iteration limit ends the turn.
+
+The console shows when aJent is waiting for the model, preparing and running
+tool calls, and receiving observations. Chat Completions responses are
+non-streaming. aJent applies a sliding history window and limits the size of
+tool observations retained in context.
+
+The [mcp.clj](https://github.com/pooriayousefi/mcp.clj) dependency handles MCP
+transport, discovery, and the OpenAI-compatible tool adapter. The native
+servers under `tools/` are pinned Git submodules and use
+[mcpxx](https://github.com/pooriayousefi/mcpxx).
+
+## Configuration
+
+aJent follows the [SAURON](https://github.com/pooriayousefi/sauron) file layout
+and startup flags. Configuration paths are relative to the working directory.
+
+| File | What to configure |
+| --- | --- |
+| [`cfg/ai_providers.json`](cfg/ai_providers.json) | Provider names, models, endpoint URLs, and optional API key environment variables |
+| [`cfg/system_prompts.json`](cfg/system_prompts.json) | Persona names mapped to system prompt strings |
+| [`cfg/mcp_servers.json`](cfg/mcp_servers.json) | MCP server names and stdio and HTTP transport settings |
+
+### Providers and personas
+
+Each entry in the `providers` array contains a `name` and a `models` array.
+Each model has a `model-name` and a full API `base-url`, including any
+version path. Set `temp` and `max-tokens` on the model entry as needed.
+For authenticated endpoints, set `api-key-env` on the provider or model
+and export that variable before launch. The model's setting takes precedence.
+aJent checks `AJENT_API_KEY` if the named environment variable is unset.
+
+Use `--provider NAME` and `--model NAME` to select the configured pair.
+Add a named prompt to `cfg/system_prompts.json` and select it with
+`--agent NAME`. The default is `orchestrator`. A persona changes the system
+prompt and uses the same configured tool registry.
+
+### MCP servers
+
+Each entry in `mcp_servers` has a unique `name` and two transport sections.
+Each section has a boolean `enable` field.
+
+| Enabled transports | Behavior |
+| --- | --- |
+| Stdio | Launches `command stdio` followed by `args`. Passes `env` to the child. |
+| HTTP | Connects to an existing Streamable HTTP server at `http://HOST:PORT/mcp`. |
+| Stdio and HTTP | Launches `command both HOST PORT` followed by `args` and communicates through stdio. |
+| Neither | Skips the entry. |
+
+The default configuration starts nine servers over stdio and exposes 99 tools
+across file, directory, shell, time, Git, random-number, statistics, memory,
+and utility operations. An enabled server that fails to start or discover
+tools produces a startup error naming that server. Set `mcp_servers` to
+`[]` for model-only chat.
+
+The shell entry sets `MCPXX_SHELL_ENABLED=1` under `transports.stdio.env`.
+Set both transport flags to `false` to skip the shell server. Tool operations
+run with the server process's permissions. The interactive approval check
+covers known destructive file operations and shell command patterns.
+
+### Upgrading an older checkout
+
+Keep a copy of any customized settings before updating. Move server entries
+to `cfg/mcp_servers.json`. For a legacy stdio command array, move its first
+element to `transports.stdio.command` and the rest to `args` under the same
+section. Move `env` there as well. For a standard HTTP endpoint, put its host
+and port under `transports.http`. Legacy flat entries still work for custom
+URLs or headers. The root `mcp_servers.json` is a fallback when the file
+under `cfg/` is absent.
+
+The old positional `local` and `online` commands still work with the legacy
+provider registry and optional root `providers.json`. Move custom models to
+`cfg/ai_providers.json` to select them with the current CLI.
+
+## Standalone JAR and library dependency
 
 ```sh
-java -jar target/ajent.jar --agent orchestrator --provider local --model gpt-oss-20b
+lein uberjar
+java -jar target/ajent.jar --version
+java -jar target/ajent.jar --provider local --model gpt-oss-20b
 ```
 
-## Tool execution flow
+The standalone JAR includes JVM dependencies. It reads the external `cfg/`
+files and launches the compiled native tools from their configured paths.
 
-The console shows progress while waiting for a model response and while
-approved MCP tool calls run. Model responses are still delivered in full.
+Once a version is published, add it to another Leiningen project's
+`:dependencies` using the version listed on
+[Clojars](https://clojars.org/org.clojars.pooriayousefi/ajent). For aJent 2.3.0:
 
-1. aJent connects to each enabled MCP server.
-2. MCP tools are discovered with tools/list, including paginated results.
-3. mcp.openai/tools creates OpenAI-compatible function schemas and collision-safe namespaced routes.
-4. The schemas are sent to the configured model endpoint.
-5. The model returns one or more tool calls.
-6. aJent resolves each exposed function name to its original MCP tool. Destructive operations are presented for user approval before execution.
-7. Approved calls execute concurrently; results are returned as matching tool messages using the original tool_call_id.
-8. The ReAct loop continues until the model returns a final answer or reaches its iteration limit.
+```clojure
+[org.clojars.pooriayousefi/ajent "2.3.0"]
+```
 
-## Security notes
-
-MCP does not itself make a tool safe. A connected server can have the permissions of its own process or service account. Review each server before enabling it, keep remote endpoints protected with authentication and network controls, and use least-privilege operating-system accounts.
-
-The aJent approval gate is a defense-in-depth check for known destructive tool names and shell commands. It is not a general sandbox and cannot infer every destructive operation exposed by arbitrary third-party MCP servers. Treat tools from untrusted servers as untrusted code with potentially powerful capabilities.
-
-## Version
-
-aJent 2.2.0 — MCP-native tool orchestration.
+The Clojars artifact is the library JAR. Build the standalone JAR with
+`lein uberjar` when you want to run aJent directly with Java.
 
 ## License
 

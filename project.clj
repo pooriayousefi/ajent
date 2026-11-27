@@ -1,4 +1,4 @@
-(defproject org.clojars.pooriayousefi/ajent "2.2.0"
+(defproject org.clojars.pooriayousefi/ajent "2.3.0"
   :description "aJent: MCP-native Agentic AI Framework with offline + online LLM provider support"
   :url "https://github.com/pooriayousefi/ajent"
   :license {:name "Eclipse Public License 2.0"

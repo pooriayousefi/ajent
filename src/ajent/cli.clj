@@ -5,7 +5,7 @@
             [clojure.string  :as str])
   (:import [java.net URI URISyntaxException]))
 
-(def ^:const version "2.2.0")
+(def ^:const version "2.3.0")
 
 (def ^:private help-flags    #{"help" "--help" "-h"})
 (def ^:private version-flags #{"-v" "--version"})

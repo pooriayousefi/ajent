@@ -60,7 +60,7 @@
     (throw (ex-info "MCP server must define exactly one of command or url"
                     {:server name})))
   (let [options (cond-> {:timeout-ms (or (:timeout-ms server) (:timeout_ms server) 30000)
-                         :client-info {:name "aJent" :version "2.2.0"}}
+                         :client-info {:name "aJent" :version "2.3.0"}}
                   command (assoc :command command)
                   url (assoc :url url)
                   cwd (assoc :cwd cwd)
