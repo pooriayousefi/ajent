@@ -37,75 +37,69 @@ lein test
 lein uberjar
 ```
 
-## LLM execution modes
+## Configuration
 
-aJent has two explicit entry points. Both use the same ReAct agent, MCP tool registry, and conversation loop; only the model provider configuration differs.
+aJent reads configuration relative to the working directory. The filenames,
+JSON structures, and launch flags follow SAURON.
 
-### Local model (no API key)
+| File | Contents |
+| --- | --- |
+| `cfg/ai_providers.json` | A `providers` array with provider names and model entries. Each model has a `model-name` and a full OpenAI-compatible `base-url`. Set `temp` and `max-tokens` per model. |
+| `cfg/mcp_servers.json` | An `mcp_servers` array with one uniquely named entry per server and settings for both transports. |
+| `cfg/system_prompts.json` | An object mapping persona names to system prompts. The default persona is `orchestrator`. |
 
-Connect to any local OpenAI-compatible endpoint, such as llama.cpp, Ollama, or LM Studio:
+A hosted provider or model can name its API key environment variable with
+`api-key-env`. Model settings take precedence over provider settings. If the
+named variable is unset, aJent checks `AJENT_API_KEY`. Store the key itself in
+the environment.
 
-```sh
-lein run local http://127.0.0.1:8080 gpt-oss-20b 0.7
-```
-
-The host URL is normalized to an OpenAI-compatible API base URL (a trailing `/v1` is added when needed). Local mode does not attach an Authorization header.
-
-### Hosted provider (API key required)
-
-Choose a built-in online provider and supply its key through the provider-specific environment variable:
-
-```sh
-export OPENAI_API_KEY="..."
-lein run online openai gpt-4o 0.7
-
-export DEEPSEEK_API_KEY="..."
-lein run online deepseek deepseek-chat 0.7
-
-export OPENROUTER_API_KEY="..."
-lein run online openrouter openai/gpt-4o 0.7
-```
-
-If the provider-specific variable is not set, aJent checks `AJENT_API_KEY` as a universal fallback. Online mode rejects missing keys and providers classified as local. Never put API keys directly in command-line arguments.
-
-Built-in hosted providers include OpenAI, Zhipu, DeepSeek, Groq, Mistral, Together AI, and OpenRouter. Custom entries in `providers.json` can be used in online mode by specifying `api-key-env` (and optionally `mode: "online"`).
-
-Use `lein run --help` to see the supported syntax and provider list.
-
-## Configure MCP servers
-
-Create or edit mcp_servers.json in the working directory. Each entry must define a unique name and exactly one transport:
-
-- command: argument vector used to launch a local stdio MCP server.
-- url: absolute Streamable HTTP MCP endpoint URL.
+### MCP transports
 
 ```json
 {
   "mcp_servers": [
     {
-      "name": "local-files",
-      "command": ["clojure", "-M", "-m", "my.tools.files"],
-      "cwd": "/absolute/path/to/my-mcp-server",
-      "enabled": true,
-      "timeout_ms": 30000
-    },
-    {
-      "name": "remote-tools",
-      "url": "http://127.0.0.1:3000/mcp",
-      "headers": {
-        "Authorization": "Bearer YOUR_TOKEN"
-      },
-      "enabled": true,
-      "timeout_ms": 30000
+      "name": "time",
+      "transports": {
+        "stdio": {
+          "enable": true,
+          "command": "./tools/time-mcp-server/bin/time_mcp_tool_server",
+          "args": [],
+          "env": {}
+        },
+        "http": {
+          "enable": false,
+          "host": "127.0.0.1",
+          "port": 8091
+        }
+      }
     }
   ]
 }
 ```
 
-For stdio servers, cwd and env are optional. For HTTP servers, headers may contain authentication headers. Set enabled to false to disable an entry. The default request timeout is 30 seconds.
+- **Stdio only** launches the configured command with `stdio` followed by
+  `args`, and passes `env` to the child process.
+- **HTTP only** connects to an already-running server at `http://HOST:PORT/mcp`.
+- **Both** launches the command with `both HOST PORT` followed by `args`.
+  aJent communicates with the child over stdio.
+- **Both disabled** skips the server. With no enabled servers, aJent runs as
+  model-only chat. An enabled server that fails startup or discovery stops
+  startup with an error naming the server.
 
-The repository ships an empty MCP server list. Add the command or URL of each
-MCP server you want to use. With an empty list, aJent runs as model-only chat.
+### Migration
+
+Move custom MCP entries into `cfg/mcp_servers.json`. The first element of
+a legacy command array becomes `transports.stdio.command`, any remaining
+elements become `args`, and `env` moves under `stdio`. A standard HTTP URL
+becomes `transports.http.host` and `port`. For custom URLs or auth headers,
+aJent still accepts legacy flat entries. It reads the root
+`mcp_servers.json` only when the file under `cfg/` is absent.
+
+The previous positional `local` and `online` commands remain available for
+compatibility. They still use the old provider defaults and optional root
+`providers.json` overrides. Move custom models into `cfg/ai_providers.json`
+to select them with `--provider` and `--model`.
 
 ## Bundled C++ MCP tool servers
 
@@ -121,14 +115,11 @@ git submodule update --init --recursive
 make -C tools
 ```
 
-Use [tools/mcp_servers.example.json](tools/mcp_servers.example.json) as a template
-for your root `mcp_servers.json`. If you already have entries, merge the ones
-you want to use. Start aJent from the repository root so the relative binary
-paths resolve. The example starts all nine servers, including the shell server
-with `MCPXX_SHELL_ENABLED=1`. aJent reads the configuration from
-`mcp_servers.json` in its working directory. Set the shell entry's `enabled`
-to `false` if you want to skip launching it. The memory server
-stores `sauron_memory.json` in the working directory.
+Use [tools/mcp_servers.example.json](tools/mcp_servers.example.json) as a
+template for `cfg/mcp_servers.json`. Start aJent from the repository root
+so the binary paths resolve. The example enables all nine servers over stdio
+and sets `MCPXX_SHELL_ENABLED=1` in the shell server's `stdio.env`. The memory
+server stores `sauron_memory.json` in the working directory.
 
 ## Run
 
@@ -140,16 +131,16 @@ llama-server --jinja -m ~/llms/model.gguf \
   --host 127.0.0.1 --port 8080
 ```
 
-Then launch aJent:
+Set the model name and endpoint in `cfg/ai_providers.json`, then launch aJent:
 
 ```sh
-lein run local http://localhost:8080 model-name 0.7
+lein run --agent orchestrator --provider local --model gpt-oss-20b
 ```
 
 Or build and run the uberjar:
 
 ```sh
-java -jar target/ajent.jar local http://localhost:8080 model-name 0.7
+java -jar target/ajent.jar --agent orchestrator --provider local --model gpt-oss-20b
 ```
 
 ## Tool execution flow
@@ -171,15 +162,6 @@ approved MCP tool calls run. Model responses are still delivered in full.
 MCP does not itself make a tool safe. A connected server can have the permissions of its own process or service account. Review each server before enabling it, keep remote endpoints protected with authentication and network controls, and use least-privilege operating-system accounts.
 
 The aJent approval gate is a defense-in-depth check for known destructive tool names and shell commands. It is not a general sandbox and cannot infer every destructive operation exposed by arbitrary third-party MCP servers. Treat tools from untrusted servers as untrusted code with potentially powerful capabilities.
-
-## Configuration
-
-Built-in model providers live in `src/ajent/providers.clj`. Create an optional
-local `providers.json` only when you need to add or override a provider. The
-file is ignored by Git. aJent connects to the model endpoint you supply.
-All tool discovery and execution use MCP, over stdio or Streamable HTTP.
-
-The usual provider environment variables remain supported, with AJENT_API_KEY as a fallback. Select `local` or `online` explicitly as described above.
 
 ## Version
 

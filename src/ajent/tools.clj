@@ -1,23 +1,56 @@
 (ns ajent.tools
   "MCP connection registry and OpenAI-compatible tool adapter."
-  (:require [clojure.data.json :as json]
+  (:require [ajent.config :as config]
             [clojure.string :as str]
             [mcp.client :as mcp]
             [mcp.openai :as openai])
-  (:import [java.io File]))
+  (:import [java.net URI URISyntaxException]))
 
-(def ^:private config-file "mcp_servers.json")
 (defonce ^:private registry-cache (atom nil))
 
 (defn- load-config []
-  (let [file (File. config-file)]
-    (when-not (.exists file)
-      (throw (ex-info (str config-file " not found") {:file config-file})))
-    (let [config (json/read-str (slurp file) :key-fn keyword)
-          servers (:mcp_servers config)]
-      (when-not (vector? servers)
-        (throw (ex-info "mcp_servers.json must contain an mcp_servers array" {})))
-      servers)))
+  (let [path (or (config/find-file "cfg/mcp_servers.json" "mcp_servers.json")
+                 "cfg/mcp_servers.json")
+        servers (:mcp_servers (config/read-json path))]
+    (when-not (and (vector? servers) (every? map? servers))
+      (throw (ex-info (str path " must contain an mcp_servers array of objects")
+                      {:file path})))
+    (println "MCP servers:" path)
+    servers))
+
+(defn- http-endpoint [host port]
+  (when-not (and (string? host) (not (str/blank? host))
+                 (integer? port) (<= 1 port 65535))
+    (throw (ex-info "HTTP transport requires a host and port from 1 to 65535" {})))
+  (try
+    (str (URI. "http" nil host (int port) "/mcp" nil nil))
+    (catch URISyntaxException e
+      (throw (ex-info "Invalid MCP HTTP host" {:host host} e)))))
+
+(defn- transport-options [{:keys [transports] :as server}]
+  (if (contains? server :transports)
+    (let [{:keys [stdio http]} transports
+          stdio? (true? (:enable stdio))
+          http? (true? (:enable http))
+          {:keys [command args env]} stdio
+          {:keys [host port]} http
+          url (when http? (http-endpoint host port))]
+      (when-not (and (boolean? (:enable stdio)) (boolean? (:enable http)))
+        (throw (ex-info "Both transports require a boolean enable field" {})))
+      (when (and stdio?
+                 (not (and (string? command) (not (str/blank? command))
+                           (or (nil? args) (and (vector? args) (every? string? args)))
+                           (or (nil? env) (and (map? env) (every? string? (vals env)))))))
+        (throw (ex-info "Stdio requires a command string, optional args array, and optional env object" {})))
+      (cond
+        stdio? (assoc server :command
+                      (into (if http?
+                              [command "both" host (str port)]
+                              [command "stdio"])
+                            args)
+                      :env env)
+        http? (assoc server :url url)))
+    (when-not (false? (:enabled server)) server)))
 
 (defn- connect-server [{:keys [name command url cwd env headers] :as server}]
   (when-not (and (string? name) (not (str/blank? name)))
@@ -39,32 +72,41 @@
   (doseq [[_ conn] (:connections registry)]
     (try (mcp/close! conn) (catch Exception _))))
 
+(defn- server-step [server-name action f]
+  (try
+    (f)
+    (catch Exception e
+      (throw (ex-info (str "MCP server '" server-name "' " action ": " (.getMessage e))
+                      {:server server-name} e)))))
+
 (defn- build-registry []
-  (let [servers (filterv #(and (map? %) (not (false? (:enabled %)))) (load-config))
-        names (mapv :name servers)]
+  (let [servers (load-config)
+        names (mapv :name servers)
+        connections (atom {})]
+    (when-not (every? #(and (string? %) (not (str/blank? %))) names)
+      (throw (ex-info "Every MCP server requires a non-empty name" {})))
     (when-not (= (count names) (count (set names)))
       (throw (ex-info "MCP server names must be unique" {:names names})))
     (println "Connecting to MCP servers…")
-    (let [connections
-          (reduce (fn [acc server]
-                    (try
-                      (let [conn (connect-server server)]
-                        (println (str "  ✓ " (:name server) " connected"))
-                        (assoc acc (:name server) conn))
-                      (catch Exception e
-                        (println (str "  ✗ " (:name server) ": " (.getMessage e)))
-                        acc)))
-                  (array-map)
-                  servers)
-          registry {:connections connections}]
-      (try
-        (let [{:keys [tools routes]} (openai/tools connections)]
-          (println (str "\n✓ MCP registry built: " (count connections)
-                        " server(s), " (count tools) " tool(s)"))
-          (assoc registry :tools tools :routes routes))
-        (catch Exception e
-          (close-registry! registry)
-          (throw e))))))
+    (try
+      (doseq [{:keys [name] :as server} servers]
+        (server-step name "failed to connect"
+                     #(when-let [options (transport-options server)]
+                        (swap! connections assoc name (connect-server options)))))
+      (let [catalogs (mapv (fn [[name conn]]
+                             (server-step name "failed discovery"
+                                          #(openai/tools {name conn})))
+                           @connections)
+            tools (vec (sort-by #(get-in % [:function :name]) (mapcat :tools catalogs)))
+            routes (into {} (mapcat :routes catalogs))]
+        (when-not (= (count tools) (count routes))
+          (throw (ex-info "OpenAI function name collision after sanitization" {})))
+        (println (str "\n✓ MCP registry built: " (count @connections)
+                      " server(s), " (count tools) " tool(s)"))
+        {:connections @connections :tools tools :routes routes})
+      (catch Exception e
+        (close-registry! {:connections @connections})
+        (throw e)))))
 
 (defn- get-registry []
   (or @registry-cache

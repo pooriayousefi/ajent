@@ -1,0 +1,73 @@
+{
+  "providers": [
+    {
+      "name": "openai",
+      "type": "openai-compatible",
+      "api-key-env": "OPENAI_API_KEY",
+      "models": [
+        {
+          "model-name": "gpt-6-luna",
+          "base-url": "https://api.openai.com/v1",
+          "temp": 0.7,
+          "max-tokens": 4096
+        }
+      ]
+    },
+    {
+      "name": "zai",
+      "type": "openai-compatible",
+      "api-key-env": "ZAI_API_KEY",
+      "models": [
+        {
+          "model-name": "glm-4.7-flash",
+          "base-url": "https://api.z.ai/api/paas/v4",
+          "temp": 0.7,
+          "max-tokens": 4096
+        }
+      ]
+    },
+    {
+      "name": "groq",
+      "type": "openai-compatible",
+      "api-key-env": "GROQ_API_KEY",
+      "models": [
+        {
+          "model-name": "openai/gpt-oss-120b",
+          "base-url": "https://api.groq.com/openai/v1",
+          "temp": 0.7,
+          "max-tokens": 4096
+        },
+        {
+          "model-name": "qwen/qwen3.8-27b",
+          "base-url": "https://api.groq.com/openai/v1",
+          "temp": 0.7,
+          "max-tokens": 4096
+        }
+      ]
+    },
+    {
+      "name": "local",
+      "type": "openai-compatible",
+      "models": [
+        {
+          "model-name": "gpt-oss-20b",
+          "base-url": "http://127.0.0.1:8080/v1",
+          "temp": 0.7,
+          "max-tokens": 4096
+        },
+        {
+          "model-name": "glm-ocr",
+          "base-url": "http://127.0.0.1:8081/v1",
+          "temp": 0.7,
+          "max-tokens": 4096
+        },
+        {
+          "model-name": "gemma-4-12b",
+          "base-url": "http://127.0.0.1:8082/v1",
+          "temp": 0.7,
+          "max-tokens": 4096
+        }
+      ]
+    }
+  ]
+}

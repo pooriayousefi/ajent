@@ -9,7 +9,7 @@
                     0
                     (catch IllegalArgumentException e
                       (println (str "\n❌ " (.getMessage e)))
-                      (println "Run without arguments to see usage and all providers.")
+                      (println "Run with --help to see usage.")
                       1)
                     (catch Exception e
                       (println (str "\n❌ " (.getMessage e)))

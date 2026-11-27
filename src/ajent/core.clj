@@ -2,28 +2,17 @@
   (:require [clojure.string :as str]
             [ajent.agent :as agent]
             [ajent.cli   :as cli]
+            [ajent.config :as config]
             [ajent.tools :as tools]))
 
-(defn build-system-prompt []
-  (str
-   "You are the aJent Orchestrator, a highly capable AI assistant with access to MCP tools.\n"
-   "Your core directive is to accurately accomplish the user's tasks using these tools.\n\n"
-   "--- FILE SYSTEM RULES ---\n"
-   "Use exact absolute paths for all file, directory, and document tools. Do not guess paths; "
-   "if a path is ambiguous, ask the user for clarification.\n\n"
-   "--- ADVANCED EXECUTION RULES ---\n"
-   "1. CONCURRENT EXECUTION: Call independent tools in the same assistant response; aJent executes them concurrently.\n"
-   "2. ERROR RECOVERY: Analyze tool errors, correct arguments where possible, and retry when appropriate.\n"
-   "3. CONTEXTUAL RESOLUTION: Resolve references such as 'that file' from the conversation history.\n"
-   "4. PLANNING: Plan before executing multi-step tasks.\n\n"
-   "--- LARGE CONTENT RULES ---\n"
-   "Avoid massive text values in tool arguments. Prefer incremental writes or server-side file operations.\n\n"
-   "--- PYTHON TOOL RULES ---\n"
-   "When using a Python MCP tool, save generated files to the directory exposed by that server. "
-   "Keep printed output concise and do not use Python to bypass the host security gate.\n\n"
-   "--- SECURITY RULES ---\n"
-   "Destructive operations require explicit user approval. Never attempt to bypass aJent's approval gate.\n\n"
-   "Always synthesize tool results into a clear, natural-language answer."))
+(defn build-system-prompt [agent-name]
+  (let [path "cfg/system_prompts.json"
+        prompt (get (config/read-json path) (keyword agent-name))]
+    (when-not (and (string? prompt) (not (str/blank? prompt)))
+      (throw (IllegalArgumentException.
+              (str "Unknown or empty agent prompt '" agent-name "' in " path))))
+    (println "System prompts:" path)
+    prompt))
 
 (defn- apply-sliding-window
   "Keeps the most recent N messages without splitting assistant tool calls from their responses."
@@ -72,7 +61,7 @@
     (cli/help-requested? args) (cli/print-usage)
     :else
     (let [config (cli/parse-args args)
-          system-prompt (build-system-prompt)]
+          system-prompt (build-system-prompt (:agent config "orchestrator"))]
       (cli/print-banner)
       (cli/print-startup-summary config)
       (try

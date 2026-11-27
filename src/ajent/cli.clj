@@ -1,6 +1,7 @@
 (ns ajent.cli
   "Command-line entrance: argument parsing, banner, usage, startup summary."
   (:require [ajent.providers :as providers]
+            [ajent.config :as config]
             [clojure.string  :as str])
   (:import [java.net URI URISyntaxException]))
 
@@ -30,20 +31,12 @@
    (str
     "aJent v" version " — agentic AI framework (offline + online LLM providers)\n\n"
     "Usage:\n"
-    "  java -jar ajent.jar local <host-url> [model] [temperature]\n"
-    "  java -jar ajent.jar online <provider> [model] [temperature]\n\n"
-    "Examples:\n"
-    "  java -jar ajent.jar local http://localhost:8080 gpt-oss-20b 0.7\n"
-    "  java -jar ajent.jar local http://localhost:11434/v1 llama3.1:8b\n"
-    "  java -jar ajent.jar online zhipu glm-4.5\n"
-    "  java -jar ajent.jar online openai gpt-4o\n\n"
-    "Online mode requires an API key; local mode does not use one.\n"
-    "Set the provider-specific environment variable or AJENT_API_KEY.\n"
-    "Override or add providers via\n"
-    "providers.json in the working directory.\n\n"
-    "(development: lein run <same args>)\n\n"
-    "Providers:\n"
-    (providers/provider-table))))
+    "  java -jar ajent.jar [--agent NAME] --provider NAME --model NAME\n\n"
+    "  --agent NAME     Prompt in cfg/system_prompts.json (default: orchestrator)\n"
+    "  --provider NAME  Provider in cfg/ai_providers.json (required)\n"
+    "  --model NAME     Model configured for that provider (required)\n"
+    "  --help           Show this help\n\n"
+    "Development: lein run --provider local --model gpt-oss-20b")))
 
 (defn- row [label value]
   (format "  %-13s %s" label value))
@@ -51,12 +44,14 @@
 (defn print-startup-summary
   "Prints the resolved runtime configuration."
   [config]
-  (let [{:keys [provider base-url model-name temperature api-key
+  (let [{:keys [agent config-path provider base-url model-name temperature api-key
                 max-iterations history-window]} config]
     (println
      (str
       "\n"
-      (row "Provider"    provider)
+      (row "Agent"       (or agent "orchestrator"))
+      "\n" (row "Provider"    provider)
+      (when config-path (str "\n" (row "Provider file" config-path)))
       "\n" (row "Endpoint"    base-url)
       "\n" (row "Model"       model-name)
       "\n" (row "Temperature" temperature)
@@ -140,13 +135,43 @@
                         " or AJENT_API_KEY before starting online mode.")))]
     (resolve-common-config provider-id provider base-url model temp api-key)))
 
-(defn parse-args
-  "Dual entry point: local <host-url> [model] [temperature], or
-   online <provider> [model] [temperature]."
-  [args]
+(defn- parse-configured-args [args]
+  (let [options (reduce (fn [parsed [flag value]]
+                          (when-not (contains? #{"--agent" "--provider" "--model"} flag)
+                            (fail! (str "Unknown option: " flag)))
+                          (when (or (str/blank? value) (str/starts-with? value "--"))
+                            (fail! (str flag " requires a value.")))
+                          (assoc parsed flag value))
+                        {} (partition-all 2 args))
+        {agent-name "--agent" provider-name "--provider" model-name "--model"
+         :or {agent-name "orchestrator"}} options
+        path "cfg/ai_providers.json"]
+    (when (or (nil? provider-name) (nil? model-name))
+      (fail! "Both --provider and --model are required."))
+    (let [entries (:providers (config/read-json path))
+          provider (some #(when (= provider-name (:name %)) %) entries)
+          model (some #(when (= model-name (:model-name %)) %) (:models provider))
+          base-url (clean-url (:base-url model))
+          key-env (or (:api-key-env model) (:api-key-env provider))
+          api-key (when key-env
+                    (or (not-empty (System/getenv key-env))
+                        (System/getenv "AJENT_API_KEY")))]
+      (when-not provider
+        (fail! (str "Unknown provider '" provider-name "' in " path)))
+      (when-not model
+        (fail! (str "Unknown model '" model-name "' for provider '" provider-name "'.")))
+      (when-not (endpoint-url? base-url)
+        (fail! (str "Model '" model-name "' requires an absolute HTTP(S) base-url.")))
+      (when (and key-env (str/blank? api-key))
+        (fail! (str "Missing API key. Set " key-env " or AJENT_API_KEY.")))
+      (-> (resolve-common-config provider-name
+                                 (assoc (merge provider model) :default-temp (:temp model))
+                                 base-url model-name nil api-key)
+          (assoc :agent agent-name :config-path path)))))
+
+(defn parse-args [args]
   (let [[mode & more] args]
     (case mode
       "local" (parse-local-args more)
       "online" (parse-online-args more)
-      (fail! (str "Unknown execution mode: '" mode
-                  "'. Use 'local' or 'online'. Run with --help for usage.")))))
+      (parse-configured-args args))))

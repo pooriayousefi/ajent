@@ -30,3 +30,21 @@
                              (#'ajent.tools/build-registry))))
     (is (= #{"http://localhost:5001/mcp" "http://localhost:5002/mcp"}
            (set @closed)))))
+
+(deftest selects-configured-model-and-persona
+  (let [config (cli/parse-args ["--model" "glm-ocr" "--agent" "reviewer" "--provider" "local"])]
+    (is (= "reviewer" (:agent config)))
+    (is (= "http://127.0.0.1:8081/v1" (:base-url config)))
+    (is (= "glm-ocr" (:model-name config))))
+  (is (thrown-with-msg? IllegalArgumentException #"Both --provider and --model"
+                        (cli/parse-args ["--provider" "local"]))))
+
+(deftest maps-sauron-transport-modes
+  (let [stdio {:enable true :command "./server" :args ["arg"] :env {:MODE "test"}}
+        http {:enable true :host "127.0.0.1" :port 8090}
+        options (fn [s h] (#'ajent.tools/transport-options {:transports {:stdio s :http h}}))]
+    (is (= ["./server" "stdio" "arg"] (:command (options stdio (assoc http :enable false)))))
+    (is (= ["./server" "both" "127.0.0.1" "8090" "arg"] (:command (options stdio http))))
+    (is (= {:MODE "test"} (:env (options stdio http))))
+    (is (= "http://127.0.0.1:8090/mcp" (:url (options (assoc stdio :enable false) http))))
+    (is (nil? (options {:enable false} {:enable false})))))
