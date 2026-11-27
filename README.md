@@ -2,6 +2,8 @@
 
 [![Clojars Project](https://img.shields.io/clojars/v/org.clojars.pooriayousefi/ajent.svg)](https://clojars.org/org.clojars.pooriayousefi/ajent)
 
+<img width="1670" height="941" alt="Clojure agent orchestration runtime banner" src="https://github.com/user-attachments/assets/51583131-742a-4075-a60c-3a2bb7dd1f0e" />
+
 aJent is a Clojure/JVM agent runtime that connects an OpenAI-compatible Chat
 Completions endpoint to Model Context Protocol (MCP) tools. Select a persona,
 provider, and model at startup. aJent discovers tools from the configured
