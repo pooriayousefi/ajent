@@ -124,7 +124,10 @@ make -C tools
 Use [tools/mcp_servers.example.json](tools/mcp_servers.example.json) as a template
 for your root `mcp_servers.json`. If you already have entries, merge the ones
 you want to use. Start aJent from the repository root so the relative binary
-paths resolve. The example leaves the shell server disabled. The memory server
+paths resolve. The example starts all nine servers, including the shell server
+with `MCPXX_SHELL_ENABLED=1`. aJent reads the configuration from
+`mcp_servers.json` in its working directory. Set the shell entry's `enabled`
+to `false` if you want to skip launching it. The memory server
 stores `sauron_memory.json` in the working directory.
 
 ## Run
@@ -150,6 +153,9 @@ java -jar target/ajent.jar local http://localhost:8080 model-name 0.7
 ```
 
 ## Tool execution flow
+
+The console shows progress while waiting for a model response and while
+approved MCP tool calls run. Model responses are still delivered in full.
 
 1. aJent connects to each enabled MCP server.
 2. MCP tools are discovered with tools/list, including paginated results.

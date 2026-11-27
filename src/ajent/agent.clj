@@ -9,6 +9,10 @@
     (println (str "\n" label ":"))
     (println body)))
 
+(defn- print-status [message]
+  (println (str "\n" message))
+  (flush))
+
 (defn- truncate-observation
   "Truncates massive tool outputs so they don't blow up the LLM context."
   [content max-chars]
@@ -61,6 +65,7 @@
           (println "\nWARNING: Max. iterations hit in agent loop/recur")
           messages)
         (let [all-tools (tools/get-tools)
+              _ (print-status "Reasoning... waiting for the model.")
               result (llm/chat-completion config messages all-tools)]
           (print-section "REASONING" (:reasoning result))
           (when (and (:content result) (not (str/blank? (:content result))))
@@ -81,6 +86,8 @@
                                       (and (:content result)
                                            (not (str/blank? (:content result))))
                                       (assoc :content (:content result)))
+                      _ (print-status (str "Planning actions... " (count tcs)
+                                           " tool call(s) requested."))
                       ;; Approval prompts must be sequential: stdin is not safe for
                       ;; simultaneous prompts from pmap/futures.
                       approvals (mapv (fn [tc]
@@ -92,6 +99,10 @@
                                             (confirm-destructive-action original-name args)
                                             false)))
                                       tcs)
+                      approved-count (count (filter true? approvals))
+                      _ (when (pos? approved-count)
+                          (print-status (str "Action... running " approved-count
+                                             " MCP tool call(s).")))
                       calls (mapv (fn [tc approved?]
                                     (future
                                       (if approved?
@@ -100,8 +111,8 @@
                                                 content (truncate-observation
                                                          (str (:content response))
                                                          max-obs-chars)]
-                                            (println "\nACTION: MCP tool" (get-in tc [:function :name]))
-                                            (println "OBSERVATION:" content "\n")
+                                            (print-status (str "Observation from " (get-in tc [:function :name])
+                                                               ": " content))
                                             (assoc response :content content))
                                           (catch Exception e
                                             {:role "tool"

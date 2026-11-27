@@ -45,8 +45,11 @@
       "command": [
         "./tools/shell-mcp-server/bin/shell_mcp_tool_server"
       ],
-      "enabled": false,
-      "timeout_ms": 30000
+      "enabled": true,
+      "timeout_ms": 30000,
+      "env": {
+        "MCPXX_SHELL_ENABLED": "1"
+      }
     },
     {
       "name": "statistics_mcp_tool_server",
