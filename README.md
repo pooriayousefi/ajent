@@ -107,6 +107,26 @@ For stdio servers, cwd and env are optional. For HTTP servers, headers may conta
 The repository ships an empty MCP server list. Add the command or URL of each
 MCP server you want to use. With an empty list, aJent runs as model-only chat.
 
+## Bundled C++ MCP tool servers
+
+The `tools/` directory pins the standalone directory, file, Git, memory,
+random-number, shell, statistics, time, and utility servers as Git submodules.
+Their nested `mcpxx` submodules supply the C++ MCP implementation.
+
+From the repository root, initialize the sources and build the servers with
+Make and a C++20 compiler:
+
+```sh
+git submodule update --init --recursive
+make -C tools
+```
+
+Use [tools/mcp_servers.example.json](tools/mcp_servers.example.json) as a template
+for your root `mcp_servers.json`. If you already have entries, merge the ones
+you want to use. Start aJent from the repository root so the relative binary
+paths resolve. The example leaves the shell server disabled. The memory server
+stores `sauron_memory.json` in the working directory.
+
 ## Run
 
 Start your model endpoint. For example, with llama.cpp:

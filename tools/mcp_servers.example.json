@@ -1,0 +1,76 @@
+{
+  "mcp_servers": [
+    {
+      "name": "directory_mcp_tool_server",
+      "command": [
+        "./tools/directory-mcp-server/bin/directory_mcp_tool_server"
+      ],
+      "enabled": true,
+      "timeout_ms": 30000
+    },
+    {
+      "name": "file_mcp_tool_server",
+      "command": [
+        "./tools/file-mcp-server/bin/file_mcp_tool_server"
+      ],
+      "enabled": true,
+      "timeout_ms": 30000
+    },
+    {
+      "name": "git_mcp_tool_server",
+      "command": [
+        "./tools/git-mcp-server/bin/git_mcp_tool_server"
+      ],
+      "enabled": true,
+      "timeout_ms": 30000
+    },
+    {
+      "name": "memory_mcp_tool_server",
+      "command": [
+        "./tools/memory-mcp-server/bin/memory_mcp_tool_server"
+      ],
+      "enabled": true,
+      "timeout_ms": 30000
+    },
+    {
+      "name": "random_number_mcp_tool_server",
+      "command": [
+        "./tools/random-number-mcp-server/bin/random_number_mcp_tool_server"
+      ],
+      "enabled": true,
+      "timeout_ms": 30000
+    },
+    {
+      "name": "shell_mcp_tool_server",
+      "command": [
+        "./tools/shell-mcp-server/bin/shell_mcp_tool_server"
+      ],
+      "enabled": false,
+      "timeout_ms": 30000
+    },
+    {
+      "name": "statistics_mcp_tool_server",
+      "command": [
+        "./tools/statistics-mcp-server/bin/statistics_mcp_tool_server"
+      ],
+      "enabled": true,
+      "timeout_ms": 30000
+    },
+    {
+      "name": "time_mcp_tool_server",
+      "command": [
+        "./tools/time-mcp-server/bin/time_mcp_tool_server"
+      ],
+      "enabled": true,
+      "timeout_ms": 30000
+    },
+    {
+      "name": "utility_mcp_tool_server",
+      "command": [
+        "./tools/utility-mcp-server/bin/utility_mcp_tool_server"
+      ],
+      "enabled": true,
+      "timeout_ms": 30000
+    }
+  ]
+}

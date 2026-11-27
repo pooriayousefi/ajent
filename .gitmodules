@@ -1,0 +1,27 @@
+[submodule "tools/directory-mcp-server"]
+	path = tools/directory-mcp-server
+	url = https://github.com/pooriayousefi/directory-mcp-server.git
+[submodule "tools/file-mcp-server"]
+	path = tools/file-mcp-server
+	url = https://github.com/pooriayousefi/file-mcp-server.git
+[submodule "tools/git-mcp-server"]
+	path = tools/git-mcp-server
+	url = https://github.com/pooriayousefi/git-mcp-server.git
+[submodule "tools/memory-mcp-server"]
+	path = tools/memory-mcp-server
+	url = https://github.com/pooriayousefi/memory-mcp-server.git
+[submodule "tools/random-number-mcp-server"]
+	path = tools/random-number-mcp-server
+	url = https://github.com/pooriayousefi/random-number-mcp-server.git
+[submodule "tools/shell-mcp-server"]
+	path = tools/shell-mcp-server
+	url = https://github.com/pooriayousefi/shell-mcp-server.git
+[submodule "tools/statistics-mcp-server"]
+	path = tools/statistics-mcp-server
+	url = https://github.com/pooriayousefi/statistics-mcp-server.git
+[submodule "tools/time-mcp-server"]
+	path = tools/time-mcp-server
+	url = https://github.com/pooriayousefi/time-mcp-server.git
+[submodule "tools/utility-mcp-server"]
+	path = tools/utility-mcp-server
+	url = https://github.com/pooriayousefi/utility-mcp-server.git
